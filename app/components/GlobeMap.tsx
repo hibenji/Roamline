@@ -249,14 +249,24 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     map.setLayoutProperty('timeline-heat-dwell', 'visibility', heatVisible && heatMode === 'dwell' ? 'visible' : 'none');
     map.setLayoutProperty('timeline-visits', 'visibility', showVisits ? 'visible' : 'none');
 
-    if (!initialFitRef.current && timeline.routes.features.length > 0) {
-      const points = timeline.routes.features.flatMap((feature) => feature.geometry.coordinates);
+    if (!initialFitRef.current && (timeline.routes.features.length > 0 || timeline.visits.features.length > 0)) {
+      const points = timeline.routes.features.length > 0
+        ? timeline.routes.features.flatMap((feature) => feature.geometry.coordinates)
+        : timeline.visits.features.map((feature) => feature.geometry.coordinates);
       const first = points[0];
       const last = points[points.length - 1];
       if (first && last) {
-        const lngs = points.map((point) => point[0]);
-        const lats = points.map((point) => point[1]);
-        map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: { top: 140, bottom: 180, left: 320, right: 80 }, maxZoom: 4.2, duration: 1200 });
+        let minLng = first[0];
+        let maxLng = first[0];
+        let minLat = first[1];
+        let maxLat = first[1];
+        for (const [lng, lat] of points) {
+          minLng = Math.min(minLng, lng);
+          maxLng = Math.max(maxLng, lng);
+          minLat = Math.min(minLat, lat);
+          maxLat = Math.max(maxLat, lat);
+        }
+        map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: { top: 140, bottom: 180, left: 320, right: 80 }, maxZoom: 4.2, duration: 1200 });
         initialFitRef.current = true;
       }
     }
