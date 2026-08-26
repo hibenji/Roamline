@@ -116,34 +116,35 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
     <section className="stats-page" aria-label="Timeline statistics">
       <div className="stats-page-heading">
         <div>
-          <h2>Timeline analytics</h2>
-          <p>Patterns from the selected range, calculated locally in this browser.</p>
+          <div className="eyebrow"><span className="eyebrow-dot" /> PATTERN REPORT / 02</div>
+          <h2>Where time<br /><em>turns into stories.</em></h2>
+          <p>Patterns pulled from your selected timeline range, with every calculation kept in this browser.</p>
         </div>
         <div className="stats-range-stamp">
-          <span>Analyzing</span>
+          <span>ANALYZING</span>
           <strong>{formatDate(timeline.coverage.start)} <i>to</i> {formatDate(timeline.coverage.end)}</strong>
-          <small>{selectedModes.length} activity types · {showVisits ? 'Visits included' : 'Visits hidden'}</small>
+          <small>{selectedModes.length} activity types · {showVisits ? 'visits included' : 'visits hidden'}</small>
         </div>
       </div>
 
       <div className="stats-kpi-grid">
         <article className="stats-kpi">
-          <span>Distance traveled</span>
+          <span>TIME IN MOTION</span>
           <strong>{formatDistance(stats.distanceMeters)}</strong>
           <small>{formatCount(movementPoints)} recorded moments</small>
         </article>
         <article className="stats-kpi">
-          <span>Longest streak</span>
+          <span>LONGEST STREAK</span>
           <strong>{stats.longestStreak}<em> days</em></strong>
           <small>{stats.activeDays ? `${formatCount(stats.activeDays)} active days total` : 'No activity in this range'}</small>
         </article>
         <article className="stats-kpi">
-          <span>Time at places</span>
+          <span>TIME AT PLACES</span>
           <strong>{formatDuration(stats.dwellMinutes)}</strong>
           <small>{formatCount(stats.visitCount)} visited places</small>
         </article>
         <article className="stats-kpi accent-kpi">
-          <span>Favourite mode</span>
+          <span>FAVOURITE MODE</span>
           <strong>{stats.topMode ? MODE_LABELS[stats.topMode] : '--'}</strong>
           <small>{stats.topMode ? `${Math.round((stats.modeBreakdown[0]?.share ?? 0) * 100)}% of route distance` : 'Select an activity type'}</small>
         </article>
@@ -152,7 +153,8 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
       <section className="stats-chart-section" aria-labelledby="activity-trend-title">
         <div className="stats-section-heading">
           <div>
-            <h3 id="activity-trend-title">Activity over time</h3>
+            <span className="section-kicker">OVER TIME</span>
+            <h3 id="activity-trend-title">Your rhythm, at a glance</h3>
             <p>{stats.trendGranularity === 'year' ? 'Yearly pattern across the selected range' : 'Monthly pattern across the selected range'}</p>
           </div>
           <div className="stats-metric-switch" role="group" aria-label="Trend metric">
@@ -185,7 +187,7 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
 
       <div className="stats-detail-grid">
         <section className="stats-detail-section" aria-labelledby="mode-breakdown-title">
-          <div className="stats-section-heading compact-heading"><div><h3 id="mode-breakdown-title">Distance by mode</h3></div></div>
+          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">HOW YOU MOVE</span><h3 id="mode-breakdown-title">Distance by mode</h3></div></div>
           <div className="mode-stat-list">
             {stats.modeBreakdown.length > 0 ? stats.modeBreakdown.map((entry) => (
               <div className="mode-stat-row" key={entry.mode}>
@@ -197,7 +199,7 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
         </section>
 
         <section className="stats-detail-section" aria-labelledby="weekly-rhythm-title">
-          <div className="stats-section-heading compact-heading"><div><h3 id="weekly-rhythm-title">Weekly rhythm</h3></div><span className="detail-note">Peak: {busiestWeekday?.label ?? '--'}</span></div>
+          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">WHEN YOU MOVE</span><h3 id="weekly-rhythm-title">Weekly rhythm</h3></div><span className="detail-note">Peak: {busiestWeekday?.label ?? '--'}</span></div>
           <div className="weekday-chart" role="img" aria-label="Activity by day of week">
             {stats.weekdayCounts.map((entry) => <div className="weekday-column" key={entry.label}><div className="weekday-bar-track"><span style={{ height: `${Math.max(entry.count > 0 ? 8 : 2, entry.count / maxWeekday * 100)}%` }} /></div><strong>{entry.label.slice(0, 1)}</strong><small>{formatCount(entry.count)}</small></div>)}
           </div>
@@ -206,7 +208,7 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
 
       <div className="stats-detail-grid country-year-grid">
         <section className="stats-detail-section" aria-labelledby="country-breakdown-title">
-          <div className="stats-section-heading compact-heading"><div><h3 id="country-breakdown-title">Time by country</h3></div><span className="detail-note">Local estimate</span></div>
+          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">WHERE YOU WERE</span><h3 id="country-breakdown-title">Time by country</h3></div><span className="detail-note">Local estimate</span></div>
           <div className="country-stat-list">
             {stats.countryBreakdown.length > 0 ? stats.countryBreakdown.slice(0, 8).map((entry, index) => {
               const maxMinutes = Math.max(1, stats.countryBreakdown[0]?.minutes ?? 0);
@@ -216,23 +218,23 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
         </section>
 
         <section className="stats-detail-section" aria-labelledby="year-breakdown-title">
-          <div className="stats-section-heading compact-heading"><div><h3 id="year-breakdown-title">Year by year</h3></div><span className="detail-note">Selected range</span></div>
+          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">THE YEARS</span><h3 id="year-breakdown-title">Year by year</h3></div><span className="detail-note">Selected range</span></div>
           <div className="year-stat-table" role="table" aria-label="Year by year timeline statistics">
-            <div className="year-stat-row year-stat-header" role="row"><span>Year</span><span>Days</span><span>Distance</span><span>Places</span><span>Time at places</span></div>
+            <div className="year-stat-row year-stat-header" role="row"><span>YEAR</span><span>DAYS</span><span>DISTANCE</span><span>PLACES</span><span>TIME AT PLACES</span></div>
             {stats.yearBreakdown.length > 0 ? stats.yearBreakdown.map((entry) => <div className="year-stat-row" role="row" key={entry.year}><strong>{entry.year}</strong><span>{formatCount(entry.activeDays)}</span><span>{formatDistance(entry.distanceMeters)}</span><span>{formatCount(entry.visits)}</span><span>{formatDuration(entry.dwellMinutes)}</span></div>) : <p className="empty-stats">No year-level activity in this range.</p>}
           </div>
         </section>
       </div>
 
       <section className="signature-section" aria-labelledby="signature-title">
-          <div className="stats-section-heading compact-heading"><div><h3 id="signature-title">Timeline signature</h3></div></div>
+        <div className="stats-section-heading compact-heading"><div><span className="section-kicker">THE SMALL DETAILS</span><h3 id="signature-title">Your timeline signature</h3></div></div>
         <div className="signature-grid">
-          <div><span>Busiest date</span><strong>{formatDate(stats.busiestDate ? Date.parse(`${stats.busiestDate}T00:00:00.000Z`) : undefined)}</strong><small>{formatCount(stats.busiestDateCount)} moments logged</small></div>
-          <div><span>Peak hour</span><strong>{formatHour(stats.peakHour)}</strong><small>{formatCount(stats.peakHourCount)} moments in the busiest hour</small></div>
-          <div><span>Average stay</span><strong>{formatDuration(stats.averageVisitMinutes)}</strong><small>per visited place</small></div>
-          <div><span>Route points</span><strong>{formatCount(stats.routePointCount)}</strong><small>rendered across selected modes</small></div>
-          <div><span>Busiest weekday</span><strong>{busiestWeekday?.label ?? '--'}</strong><small>{formatCount(busiestWeekday?.count ?? 0)} moments logged</small></div>
-          <div><span>Routine pulse</span><strong>{formatHour(stats.peakHour)}</strong><small>{formatCount(stats.peakHourCount)} moments at peak</small></div>
+          <div><span>BUSIEST DATE</span><strong>{formatDate(stats.busiestDate ? Date.parse(`${stats.busiestDate}T00:00:00.000Z`) : undefined)}</strong><small>{formatCount(stats.busiestDateCount)} moments logged</small></div>
+          <div><span>PEAK HOUR</span><strong>{formatHour(stats.peakHour)}</strong><small>{formatCount(stats.peakHourCount)} moments in the busiest hour</small></div>
+          <div><span>AVERAGE STAY</span><strong>{formatDuration(stats.averageVisitMinutes)}</strong><small>per visited place</small></div>
+          <div><span>ROUTE POINTS</span><strong>{formatCount(stats.routePointCount)}</strong><small>rendered across selected modes</small></div>
+          <div><span>BUSIEST WEEKDAY</span><strong>{busiestWeekday?.label ?? '--'}</strong><small>{formatCount(busiestWeekday?.count ?? 0)} moments logged</small></div>
+          <div><span>ROUTINE PULSE</span><strong>{formatHour(stats.peakHour)}</strong><small>{formatCount(stats.peakHourCount)} moments at peak</small></div>
         </div>
       </section>
     </section>
