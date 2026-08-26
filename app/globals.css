@@ -1196,8 +1196,8 @@ button {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--stats-accent);
-  opacity: 0.72;
+  background: #eef2f1;
+  opacity: 1;
   box-shadow: none;
 }
 
