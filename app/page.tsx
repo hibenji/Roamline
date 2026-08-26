@@ -342,7 +342,6 @@ export default function Home() {
             <strong>{loadState === 'reading' ? `Reading ${loadLabel}` : 'Drop your Timeline JSON'}</strong>
             <small>{loadState === 'reading' ? `${progress}% · ${loadMessage}` : 'or click to browse · stays on your device'}</small>
           </span>
-          <span className="drop-arrow" aria-hidden="true">↗</span>
         </div>
 
         {loadState === 'error' && <p className="error-message" role="alert">{loadMessage}</p>}

@@ -61,11 +61,6 @@ button {
   50% { opacity: 1; transform: scale(1.16); }
 }
 
-@keyframes arrow-float {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(3px); }
-}
-
 @keyframes chart-draw {
   from { stroke-dashoffset: 1800; opacity: 0.2; }
   to { stroke-dashoffset: 0; opacity: 1; }
@@ -590,13 +585,6 @@ button {
   color: var(--muted);
   font-size: 10px;
   line-height: 1.4;
-}
-
-.drop-arrow {
-  margin-left: auto;
-  color: var(--orange);
-  font-size: 19px;
-  animation: arrow-float 2.4s ease-in-out infinite;
 }
 
 .load-meta {
@@ -1895,7 +1883,7 @@ input:focus-visible {
   }
 
   .layer-panel {
-    top: 392px;
+    top: 430px;
   }
 
   .range-back-button {
