@@ -794,9 +794,23 @@ button {
 }
 
 .range-chevron {
+  display: grid;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  place-items: center;
   color: #94a1b1;
-  font-size: 14px;
+  font-size: 0;
   transition: transform 160ms ease;
+}
+
+.range-chevron::before {
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  content: '';
+  transform: rotate(45deg) translate(-1px, -1px);
 }
 
 .range-details[open] .range-chevron {
