@@ -270,12 +270,7 @@ export default function Home() {
       />
 
       <header className="topbar">
-        <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true"><span /></span>
-          <span className="brand-name">ROAMLINE</span>
-          <span className="brand-divider" />
-          <span className="brand-caption">private location atlas</span>
-        </div>
+        <div className="topbar-context">Timeline explorer</div>
         <div className="topbar-actions">
           <span className={`connection-status ${mapReady ? 'is-ready' : ''}`}><span /> {mapReady ? 'globe online' : 'starting globe'}</span>
           <button className={`orbit-toggle ${autoRotate ? 'is-active' : ''}`} onClick={() => setAutoRotate((value) => !value)} type="button">
@@ -286,9 +281,10 @@ export default function Home() {
       </header>
 
       <section className="control-panel intro-panel">
-        <div className="eyebrow"><span className="eyebrow-dot" /> LOCATION MEMORY / 01</div>
-        <h1>See the shape<br /><em>of your days.</em></h1>
-        <p className="intro-copy">A quiet, visual record of everywhere you’ve been — orbit it, replay it, feel the patterns.</p>
+        <div className="sidebar-brand">
+          <span className="brand-mark" aria-hidden="true"><span /></span>
+          <span><strong>Roamline</strong><small>Your location history</small></span>
+        </div>
 
         <div
           className={`dropzone ${dragActive ? 'is-dragging' : ''} ${loadState === 'reading' ? 'is-reading' : ''}`}
@@ -300,25 +296,25 @@ export default function Home() {
           onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); fileInputRef.current?.click(); } }}
           role="button"
           tabIndex={0}
-          aria-label="Choose or drop a Google Timeline JSON export"
+          aria-label="Import a Google Timeline JSON export"
         >
           <input ref={fileInputRef} type="file" accept=".json,application/json" onChange={handleFileChange} hidden />
           <span className="drop-icon" aria-hidden="true">↓</span>
           <span className="drop-copy">
-            <strong>{loadState === 'reading' ? `Reading ${loadLabel}` : 'Drop your Timeline JSON'}</strong>
-            <small>{loadState === 'reading' ? `${progress}% · ${loadMessage}` : 'or click to browse · stays on your device'}</small>
+            <strong>{loadState === 'reading' ? `Reading ${loadLabel}` : 'Import timeline'}</strong>
+            <small>{loadState === 'reading' ? `${progress}% · ${loadMessage}` : 'Drop JSON here or click to choose'}</small>
           </span>
           <span className="drop-arrow" aria-hidden="true">↗</span>
         </div>
 
         {loadState === 'error' && <p className="error-message" role="alert">{loadMessage}</p>}
-        {loadState !== 'error' && <div className="load-meta"><span className={`state-dot ${loadState}`} /> <span>{loadState === 'demo' ? 'Synthetic demo' : loadState === 'reading' ? loadMessage : loadLabel}</span><span className="local-chip">LOCAL ONLY</span></div>}
+        {loadState !== 'error' && <div className="load-meta"><span className={`state-dot ${loadState}`} /> <span>{loadState === 'demo' ? 'Synthetic demo' : loadState === 'reading' ? loadMessage : loadLabel}</span><span className="local-chip">Local only</span></div>}
       </section>
 
       <section className="control-panel layer-panel">
         <div className="panel-heading">
           <div>
-            <div className="eyebrow">VIEW LAYERS</div>
+            <div className="eyebrow">View layers</div>
             <p>{modeDescription}</p>
           </div>
           <span className="layer-count">{formatCount(visibleTimeline.stats.routePointCount)} pts</span>
@@ -338,7 +334,7 @@ export default function Home() {
 
         <details className="range-details">
           <summary>
-            <span className="range-summary-copy"><span className="range-summary-icon" aria-hidden="true">◷</span><span><strong>TIME RANGE</strong><small>{rangeLabel}</small></span></span>
+            <span className="range-summary-copy"><span className="range-summary-icon" aria-hidden="true">◷</span><span><strong>Time range</strong><small>{rangeLabel}</small></span></span>
             <span className="range-chevron" aria-hidden="true">⌄</span>
           </summary>
           <div className="range-popover">
@@ -359,7 +355,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="filter-heading"><span>ACTIVITY</span><button type="button" onClick={() => setSelectedModes(allModesSelected ? [] : MODES.map((mode) => mode.key))}>{allModesSelected ? 'Clear' : 'All modes'}</button></div>
+        <div className="filter-heading"><span>Activity</span><button type="button" onClick={() => setSelectedModes(allModesSelected ? [] : MODES.map((mode) => mode.key))}>{allModesSelected ? 'Clear' : 'All modes'}</button></div>
         <div className="mode-filters">
           {MODES.map((mode) => (
             <button key={mode.key} className={`mode-pill ${selectedModes.includes(mode.key) ? 'is-selected' : ''}`} onClick={() => toggleMode(mode.key)} type="button">
@@ -377,16 +373,16 @@ export default function Home() {
       {viewMode === 'stats' && <StatsView timeline={visibleTimeline} selectedModes={selectedModes} showVisits={showVisits} />}
 
       <section className="stats-panel" aria-label="Timeline summary">
-        <div className="stats-intro"><span className="eyebrow">THE LONG VIEW</span><strong>{formatDate(visibleTimeline.coverage.start)} <span>→</span> {formatDate(visibleTimeline.coverage.end)}</strong></div>
-        <div className="stat-item"><span>ACTIVE DAYS</span><strong>{formatCount(visibleTimeline.stats.activeDays)}</strong></div>
-        <div className="stat-item"><span>DISTANCE</span><strong>{formatDistance(visibleTimeline.stats.distanceMeters)}</strong></div>
-        <div className="stat-item"><span>VISITS</span><strong>{formatCount(visibleTimeline.stats.visitCount)}</strong></div>
-        <div className="stat-item hotspots"><span>HOT ZONES</span><div className="hotspot-chips">{visibleTimeline.stats.hotspots.slice(0, 3).map((hotspot, index) => <span key={`${hotspot.lat}-${hotspot.lng}-${index}`}>{index + 1} · {hotspot.lat.toFixed(2)}°, {hotspot.lng.toFixed(2)}°</span>)}</div></div>
+        <div className="stats-intro"><span className="eyebrow">Timeline range</span><strong>{formatDate(visibleTimeline.coverage.start)} <span>→</span> {formatDate(visibleTimeline.coverage.end)}</strong></div>
+        <div className="stat-item"><span>Active days</span><strong>{formatCount(visibleTimeline.stats.activeDays)}</strong></div>
+        <div className="stat-item"><span>Distance</span><strong>{formatDistance(visibleTimeline.stats.distanceMeters)}</strong></div>
+        <div className="stat-item"><span>Visits</span><strong>{formatCount(visibleTimeline.stats.visitCount)}</strong></div>
+        <div className="stat-item hotspots"><span>Hot zones</span><div className="hotspot-chips">{visibleTimeline.stats.hotspots.slice(0, 3).map((hotspot, index) => <span key={`${hotspot.lat}-${hotspot.lng}-${index}`}>{index + 1} · {hotspot.lat.toFixed(2)}°, {hotspot.lng.toFixed(2)}°</span>)}</div></div>
       </section>
 
       <section className={`timeline-dock ${viewMode === 'replay' ? 'is-visible' : ''}`} aria-label="Timeline playback">
         <div className="timeline-dock-top">
-          <div className="timeline-label"><span className="playhead-dot" /> <span>{viewMode === 'replay' ? 'LIVE REPLAY' : 'TIMELINE REPLAY'}</span></div>
+          <div className="timeline-label"><span className="playhead-dot" /> <span>{viewMode === 'replay' ? 'Live replay' : 'Timeline replay'}</span></div>
           <strong>{formatDate(currentDate)} <span className="timeline-time">{new Intl.DateTimeFormat('en', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(currentDate)}</span></strong>
           <div className="speed-options" role="group" aria-label="Playback speed">
             {[1, 4, 16].map((value) => <button key={value} className={speed === value ? 'is-active' : ''} onClick={() => setSpeed(value)} type="button">{value}×</button>)}
