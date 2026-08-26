@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import GlobeMap, { pointAtProgress, type GlobeViewMode, type HeatViewMode } from './components/GlobeMap';
+import TimelineWorker from './timeline.worker?worker';
 import {
   createDemoTimeline,
   type ModeKey,
@@ -158,7 +159,7 @@ export default function Home() {
     }
 
     workerRef.current?.terminate();
-    const worker = new Worker(new URL('./timeline.worker.ts', import.meta.url), { type: 'module' });
+    const worker = new TimelineWorker();
     workerRef.current = worker;
     setLoadState('reading');
     setLoadLabel(file.name);
@@ -340,7 +341,7 @@ export default function Home() {
         <div className="stat-item"><span>ACTIVE DAYS</span><strong>{formatCount(timeline.stats.activeDays)}</strong></div>
         <div className="stat-item"><span>DISTANCE</span><strong>{formatDistance(timeline.stats.distanceMeters)}</strong></div>
         <div className="stat-item"><span>VISITS</span><strong>{formatCount(timeline.stats.visitCount)}</strong></div>
-        <div className="stat-item hotspots"><span>HOT ZONES</span><div className="hotspot-chips">{timeline.stats.hotspots.slice(0, 3).map((hotspot, index) => <span key={`${hotspot.lat}-${hotspot.lng}`}>{index + 1} · {hotspot.lat.toFixed(2)}°, {hotspot.lng.toFixed(2)}°</span>)}</div></div>
+        <div className="stat-item hotspots"><span>HOT ZONES</span><div className="hotspot-chips">{timeline.stats.hotspots.slice(0, 3).map((hotspot, index) => <span key={`${hotspot.lat}-${hotspot.lng}-${index}`}>{index + 1} · {hotspot.lat.toFixed(2)}°, {hotspot.lng.toFixed(2)}°</span>)}</div></div>
       </section>
 
       <section className={`timeline-dock ${viewMode === 'replay' ? 'is-visible' : ''}`} aria-label="Timeline playback">

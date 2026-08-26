@@ -36,9 +36,9 @@ const MAP_STYLE: StyleSpecification = {
     cartoDark: {
       type: 'raster',
       tiles: [
-        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
       ],
       tileSize: 256,
       attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
@@ -95,7 +95,10 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
 
     async function createMap() {
       if (!containerRef.current) return;
-      const maplibregl = await import('maplibre-gl');
+      const maplibreModule = await import('maplibre-gl');
+      const maplibregl = 'Map' in maplibreModule
+        ? maplibreModule
+        : (maplibreModule as unknown as { default: typeof maplibreModule }).default;
       if (disposed || !containerRef.current) return;
 
       const map = new maplibregl.Map({

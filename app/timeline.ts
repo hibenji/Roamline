@@ -127,6 +127,10 @@ function parseTime(value: unknown): number | undefined {
   }
 
   if (typeof value === 'string') {
+    const numericTime = Number(value);
+    if (Number.isFinite(numericTime)) {
+      return numericTime > 100000000000 ? numericTime : numericTime * 1000;
+    }
     const time = Date.parse(value);
     return Number.isFinite(time) ? time : undefined;
   }
