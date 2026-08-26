@@ -118,7 +118,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
         center: [10, 40],
         zoom: 1.45,
         pitch: 0,
-        bearing: -12,
+        bearing: 0,
         dragRotate: true,
         touchPitch: true,
       });
