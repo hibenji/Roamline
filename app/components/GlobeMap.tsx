@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GeoJSONSource, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import type { ModeKey, NormalizedTimeline, Point } from '../timeline';
 
@@ -18,6 +18,7 @@ type GlobeMapProps = {
   playbackProgress: number;
   autoRotate: boolean;
   onMapReady?: () => void;
+  onFocusRange?: (fromDate: string, toDate: string) => void;
 };
 
 const ROUTE_COLORS: Record<ModeKey, string> = {
@@ -67,6 +68,87 @@ const MAP_STYLE: StyleSpecification = {
 };
 
 const emptyCollection = { type: 'FeatureCollection' as const, features: [] };
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+type MapDetail = {
+  kind: 'route' | 'visit';
+  coordinate: [number, number];
+  screenX: number;
+  screenY: number;
+  placement: 'above' | 'below';
+  start: number;
+  end: number;
+  mode?: ModeKey;
+  distanceMeters?: number;
+  durationMinutes?: number;
+};
+
+const MODE_LABELS: Record<ModeKey, string> = {
+  drive: 'Driving',
+  walk: 'Walking',
+  cycle: 'Cycling',
+  transit: 'Transit',
+  flight: 'Flying',
+  water: 'Water',
+  other: 'Other',
+};
+
+function finiteNumber(value: unknown): number | undefined {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function formatDetailTime(timestamp: number) {
+  if (!Number.isFinite(timestamp)) return 'Time unavailable';
+  return new Intl.DateTimeFormat('en', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  }).format(timestamp);
+}
+
+function formatDetailRange(start: number, end: number) {
+  if (!Number.isFinite(start)) return 'Time unavailable';
+  if (!Number.isFinite(end) || end <= start || end - start < 60_000) return formatDetailTime(start);
+  return `${formatDetailTime(start)} → ${formatDetailTime(end)}`;
+}
+
+function formatDetailDistance(meters?: number) {
+  if (!Number.isFinite(meters) || !meters || meters <= 0) return 'Not available';
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(meters >= 100_000 ? 0 : 1)} km`;
+}
+
+function formatDetailDuration(minutes?: number) {
+  if (!Number.isFinite(minutes) || !minutes || minutes <= 0) return 'Not available';
+  if (minutes >= 1440) return `${(minutes / 1440).toFixed(1)} days`;
+  if (minutes >= 60) return `${(minutes / 60).toFixed(1)} hrs`;
+  return `${Math.round(minutes)} min`;
+}
+
+function startOfUtcDay(timestamp: number) {
+  const date = new Date(timestamp);
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+function dateInputValue(timestamp: number) {
+  return new Date(timestamp).toISOString().slice(0, 10);
+}
+
+function positionForDetail(map: MapLibreMap, coordinate: [number, number]) {
+  const projected = map.project(coordinate);
+  const width = map.getContainer().clientWidth;
+  const height = map.getContainer().clientHeight;
+  return {
+    screenX: Math.min(Math.max(projected.x, 18), Math.max(18, width - 18)),
+    screenY: Math.min(Math.max(projected.y, 18), Math.max(18, height - 18)),
+    placement: projected.y < 170 ? 'below' as const : 'above' as const,
+  };
+}
 
 function sourceData(timeline: NormalizedTimeline, playbackProgress: number, selectedModes: ModeKey[]) {
   const playbackIndex = Math.max(0, Math.min(timeline.playback.length - 1, Math.floor(playbackProgress * Math.max(0, timeline.playback.length - 1))));
@@ -103,14 +185,26 @@ function sourceData(timeline: NormalizedTimeline, playbackProgress: number, sele
   return { route, point };
 }
 
-export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, showVisits, playbackProgress, autoRotate, onMapReady }: GlobeMapProps) {
+export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, showVisits, playbackProgress, autoRotate, onMapReady, onFocusRange }: GlobeMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const hasLoadedRef = useRef(false);
   const initialFitRef = useRef(false);
   const timelineIdentityRef = useRef(timeline);
+  const viewModeRef = useRef(viewMode);
+  const selectedAnchorRef = useRef<[number, number] | null>(null);
+  const onFocusRangeRef = useRef(onFocusRange);
+  const [selectedDetail, setSelectedDetail] = useState<MapDetail | null>(null);
 
   const playbackSources = useMemo(() => sourceData(timeline, playbackProgress, selectedModes), [timeline, playbackProgress, selectedModes]);
+
+  useEffect(() => {
+    viewModeRef.current = viewMode;
+  }, [viewMode]);
+
+  useEffect(() => {
+    onFocusRangeRef.current = onFocusRange;
+  }, [onFocusRange]);
 
   useEffect(() => {
     let disposed = false;
@@ -160,6 +254,13 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
           source: 'timeline-routes',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: { 'line-color': modeExpression, 'line-width': 2.2, 'line-opacity': 0.82 },
+        });
+        map.addLayer({
+          id: 'timeline-route-hit',
+          type: 'line',
+          source: 'timeline-routes',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#ffffff', 'line-width': 14, 'line-opacity': 0.001 },
         });
         map.addLayer({
           id: 'timeline-playback-route',
@@ -221,6 +322,69 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
           },
         });
 
+        const syncDetailPosition = () => {
+          const coordinate = selectedAnchorRef.current;
+          if (!coordinate) return;
+          setSelectedDetail((current) => current ? { ...current, ...positionForDetail(map, coordinate) } : current);
+        };
+
+        const closeDetail = () => {
+          selectedAnchorRef.current = null;
+          setSelectedDetail(null);
+        };
+
+        const handleMapClick = (event: any) => {
+          if (viewModeRef.current !== 'all') return;
+          const features = map.queryRenderedFeatures(event.point, {
+            layers: ['timeline-visits', 'timeline-route-hit', 'timeline-route'],
+          });
+          const feature = features.find((candidate: any) => candidate.layer?.id === 'timeline-visits')
+            ?? features.find((candidate: any) => candidate.layer?.id === 'timeline-route-hit' || candidate.layer?.id === 'timeline-route');
+          if (!feature) {
+            closeDetail();
+            return;
+          }
+
+          const properties = feature.properties ?? {};
+          const kind: MapDetail['kind'] = feature.layer?.id === 'timeline-visits' ? 'visit' : 'route';
+          const coordinate = event.lngLat.toArray() as [number, number];
+          const start = finiteNumber(properties.start) ?? Number.NaN;
+          const end = finiteNumber(properties.end) ?? start;
+          const mode = typeof properties.mode === 'string' && properties.mode in ROUTE_COLORS
+            ? properties.mode as ModeKey
+            : undefined;
+          const position = positionForDetail(map, coordinate);
+
+          selectedAnchorRef.current = coordinate;
+          setSelectedDetail({
+            kind,
+            coordinate,
+            start,
+            end,
+            mode,
+            distanceMeters: finiteNumber(properties.distanceMeters),
+            durationMinutes: finiteNumber(properties.durationMinutes),
+            ...position,
+          });
+        };
+
+        const handleMapMove = (event: any) => {
+          if (viewModeRef.current !== 'all') {
+            map.getCanvas().style.cursor = '';
+            return;
+          }
+          const features = map.queryRenderedFeatures(event.point, {
+            layers: ['timeline-visits', 'timeline-route-hit', 'timeline-route'],
+          });
+          map.getCanvas().style.cursor = features.length > 0 ? 'pointer' : '';
+        };
+
+        map.on('click', handleMapClick);
+        map.on('mousemove', handleMapMove);
+        map.on('mouseout', () => { map.getCanvas().style.cursor = ''; });
+        map.on('move', syncDetailPosition);
+        map.on('resize', syncDetailPosition);
+
         hasLoadedRef.current = true;
         onMapReady?.();
       });
@@ -260,6 +424,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
       : ['==', ['get', 'mode'], '__none__'];
     map.setFilter('timeline-route', modeFilter);
     map.setFilter('timeline-route-glow', modeFilter);
+    map.setFilter('timeline-route-hit', modeFilter);
     map.setFilter('timeline-heat-movement', modeFilter);
     map.setFilter('timeline-heat-dwell', modeFilter);
 
@@ -268,6 +433,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     const heatVisible = viewMode === 'heatmap';
     map.setLayoutProperty('timeline-route', 'visibility', routeVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-route-glow', 'visibility', routeVisible ? 'visible' : 'none');
+    map.setLayoutProperty('timeline-route-hit', 'visibility', routeVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-playback-route', 'visibility', replayVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-playback-point', 'visibility', replayVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-heat-movement', 'visibility', heatVisible && heatMode === 'movement' ? 'visible' : 'none');
@@ -334,7 +500,60 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     };
   }, [viewMode]);
 
-  return <div ref={containerRef} className="globe-canvas" aria-label="Interactive 3D globe showing your timeline" />;
+  function closeSelectedDetail() {
+    selectedAnchorRef.current = null;
+    setSelectedDetail(null);
+  }
+
+  function focusSelectedDetail(radiusDays: number) {
+    if (!selectedDetail || !Number.isFinite(selectedDetail.start)) return;
+    const selectedDay = startOfUtcDay(selectedDetail.start);
+    const fromDate = dateInputValue(selectedDay - radiusDays * DAY_MS);
+    const toDate = dateInputValue(selectedDay + radiusDays * DAY_MS);
+    closeSelectedDetail();
+    onFocusRangeRef.current?.(fromDate, toDate);
+  }
+
+  const detailTitle = selectedDetail?.kind === 'route'
+    ? `${MODE_LABELS[selectedDetail.mode ?? 'other']} route`
+    : 'Place visit';
+  const detailMetricLabel = selectedDetail?.kind === 'route' ? 'DISTANCE' : 'TIME THERE';
+  const detailMetricValue = selectedDetail?.kind === 'route'
+    ? formatDetailDistance(selectedDetail.distanceMeters)
+    : formatDetailDuration(selectedDetail.durationMinutes ?? ((selectedDetail.end - selectedDetail.start) / 60_000));
+
+  return (
+    <div className="globe-layer">
+      <div ref={containerRef} className="globe-canvas" aria-label="Interactive 3D globe showing your timeline" />
+      {viewMode === 'all' && selectedDetail && (
+        <>
+          <span
+            className={`map-detail-anchor ${selectedDetail.kind}`}
+            style={{ left: selectedDetail.screenX, top: selectedDetail.screenY }}
+            aria-hidden="true"
+          />
+          <aside
+            className={`map-detail-popup ${selectedDetail.placement}`}
+            style={{ left: selectedDetail.screenX, top: selectedDetail.screenY }}
+            aria-label={`${detailTitle} details`}
+          >
+            <button className="map-detail-close" type="button" onClick={closeSelectedDetail} aria-label="Close map detail">×</button>
+            <span className="map-detail-type">{selectedDetail.kind === 'route' ? 'ROUTE SEGMENT' : 'VISIT'}</span>
+            <h3>{detailTitle}</h3>
+            <p className="map-detail-time">{formatDetailRange(selectedDetail.start, selectedDetail.end)}</p>
+            <div className="map-detail-stats">
+              <span><small>{detailMetricLabel}</small><strong>{detailMetricValue}</strong></span>
+              <span><small>POINT</small><strong>{selectedDetail.coordinate[1].toFixed(2)}°, {selectedDetail.coordinate[0].toFixed(2)}°</strong></span>
+            </div>
+            <div className="map-detail-actions">
+              <button type="button" onClick={() => focusSelectedDetail(0)} disabled={!Number.isFinite(selectedDetail.start)}>This day</button>
+              <button type="button" onClick={() => focusSelectedDetail(2)} disabled={!Number.isFinite(selectedDetail.start)}>±2 days</button>
+            </div>
+          </aside>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function pointAtProgress(timeline: NormalizedTimeline, progress: number): Point | undefined {

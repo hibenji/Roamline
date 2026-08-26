@@ -81,6 +81,21 @@ button {
   to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes map-detail-pop {
+  from { opacity: 0; transform: translate(-50%, calc(-100% - 13px)) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, calc(-100% - 19px)) scale(1); }
+}
+
+@keyframes map-detail-pop-below {
+  from { opacity: 0; transform: translate(-50%, 13px) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, 19px) scale(1); }
+}
+
+@keyframes map-detail-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255, 243, 196, 0.18); }
+  50% { box-shadow: 0 0 0 8px rgba(255, 243, 196, 0); }
+}
+
 .roamline-shell {
   position: relative;
   min-height: 100svh;
@@ -89,10 +104,18 @@ button {
   background: radial-gradient(circle at 74% 47%, rgba(43, 58, 98, 0.24), transparent 28%), #080c15;
 }
 
+.globe-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
 .globe-canvas {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: 0;
+  pointer-events: auto;
   transition: opacity 550ms ease;
 }
 
@@ -100,6 +123,152 @@ button {
   width: 100%;
   height: 100%;
   background: #080c15;
+}
+
+.map-detail-anchor {
+  position: absolute;
+  z-index: 2;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border: 2px solid #0b121f;
+  border-radius: 50%;
+  background: #fff3c4;
+  animation: map-detail-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+.map-detail-anchor.visit {
+  background: #f1a08b;
+}
+
+.map-detail-popup {
+  position: absolute;
+  z-index: 3;
+  width: min(268px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid rgba(220, 229, 242, 0.16);
+  border-radius: 12px;
+  background: rgba(11, 18, 31, 0.96);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.42), 0 4px 16px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+  transform: translate(-50%, calc(-100% - 19px));
+  animation: map-detail-pop 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: auto;
+}
+
+.map-detail-popup.below {
+  transform: translate(-50%, 19px);
+  animation-name: map-detail-pop-below;
+}
+
+.map-detail-close {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #aab5c2;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.map-detail-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f2f4f2;
+  transform: rotate(8deg);
+}
+
+.map-detail-type {
+  display: block;
+  color: #93a2b6;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.map-detail-popup h3 {
+  margin: 7px 26px 4px 0;
+  color: #f1eee4;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.map-detail-time {
+  margin: 0;
+  color: #aeb9c7;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.map-detail-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(220, 229, 242, 0.1);
+  border-bottom: 1px solid rgba(220, 229, 242, 0.1);
+}
+
+.map-detail-stats span {
+  min-width: 0;
+}
+
+.map-detail-stats small {
+  display: block;
+  margin-bottom: 4px;
+  color: #75849a;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+}
+
+.map-detail-stats strong {
+  display: block;
+  overflow: hidden;
+  color: #e7ecee;
+  font-size: 10px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-detail-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.map-detail-actions button {
+  flex: 1;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #dfe6e8;
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.map-detail-actions button:hover {
+  background: rgba(255, 243, 196, 0.16);
+  color: #fff3c4;
+  transform: translateY(-1px);
+}
+
+.map-detail-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
 }
 
 .maplibregl-ctrl-attrib {

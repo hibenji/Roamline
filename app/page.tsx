@@ -141,6 +141,15 @@ export default function Home() {
   const rangeHasData = visibleTimeline.playback.length > 0 || visibleTimeline.routes.features.length > 0 || visibleTimeline.visits.features.length > 0;
   const allModesSelected = selectedModes.length === MODES.length;
 
+  const focusMapDateRange = useCallback((nextFromDate: string, nextToDate: string) => {
+    setFromDate(nextFromDate);
+    setToDate(nextToDate);
+    setViewMode('all');
+    setIsPlaying(false);
+    progressRef.current = 1;
+    setPlaybackProgress(1);
+  }, []);
+
   function chooseView(nextMode: GlobeViewMode) {
     setViewMode(nextMode);
     setIsPlaying(false);
@@ -267,6 +276,7 @@ export default function Home() {
         playbackProgress={playbackProgress}
         autoRotate={autoRotate}
         onMapReady={handleMapReady}
+        onFocusRange={focusMapDateRange}
       />
 
       <header className="topbar">
