@@ -189,6 +189,7 @@ function sourceData(timeline: NormalizedTimeline, playbackProgress: number, sele
 const MAX_CONNECT_TIME_GAP_MS = 2 * 60 * 60 * 1000;
 const MIN_CONNECT_DISTANCE_METERS = 1_000;
 const MAX_CONNECT_DISTANCE_METERS = 150_000;
+const MAX_FLIGHT_CONNECT_TIME_GAP_MS = 24 * 60 * 60 * 1000;
 
 function coordinateDistanceMeters(a: [number, number], b: [number, number]) {
   const earthRadius = 6_371_008.8;
@@ -201,8 +202,22 @@ function coordinateDistanceMeters(a: [number, number], b: [number, number]) {
   return 2 * earthRadius * Math.asin(Math.min(1, Math.sqrt(haversine)));
 }
 
+function hasTimestampBetween(values: number[], start: number, end: number) {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (values[middle] <= start) low = middle + 1;
+    else high = middle;
+  }
+  return low < values.length && values[low] < end;
+}
+
 function sequentialRouteData(timeline: NormalizedTimeline, selectedModes: ModeKey[]) {
   const selected = new Set(selectedModes);
+  const visitStarts = timeline.visits.features
+    .map((visit) => visit.properties.start)
+    .sort((a, b) => a - b);
   const boundaries = timeline.routes.features
     .filter((route) => route.geometry.coordinates.length >= 2)
     .map((route) => {
@@ -223,9 +238,14 @@ function sequentialRouteData(timeline: NormalizedTimeline, selectedModes: ModeKe
     const current = boundaries[index];
     const timeGap = current.startTime - previous.endTime;
     const distance = coordinateDistanceMeters(previous.end, current.start);
+    const isFlightConnection = previous.mode === 'flight' || current.mode === 'flight';
+    const hasVisitBetween = hasTimestampBetween(visitStarts, previous.endTime, current.startTime);
     if (!selected.has(previous.mode) || !selected.has(current.mode)
-      || timeGap < 0 || timeGap > MAX_CONNECT_TIME_GAP_MS
-      || distance < MIN_CONNECT_DISTANCE_METERS || distance > MAX_CONNECT_DISTANCE_METERS) continue;
+      || hasVisitBetween
+      || timeGap < 0
+      || timeGap > (isFlightConnection ? MAX_FLIGHT_CONNECT_TIME_GAP_MS : MAX_CONNECT_TIME_GAP_MS)
+      || distance < MIN_CONNECT_DISTANCE_METERS
+      || (!isFlightConnection && distance > MAX_CONNECT_DISTANCE_METERS)) continue;
 
     features.push({
       type: 'Feature',
