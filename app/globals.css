@@ -1733,7 +1733,7 @@ input:focus-visible {
   }
 
   .stats-kpi strong {
-    font-size: 18px;
+    font-size: 19px;
   }
 
   .stats-section-heading {
@@ -1768,11 +1768,11 @@ input:focus-visible {
   .year-stat-row {
     grid-template-columns: 0.55fr 0.45fr 0.9fr 0.55fr 0.85fr;
     gap: 5px;
-    font-size: 8px;
+    font-size: 9px;
   }
 
   .year-stat-header {
-    font-size: 6px;
+    font-size: 7px;
   }
 
   .signature-grid {
