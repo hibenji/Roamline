@@ -804,6 +804,31 @@ button {
   transform: rotate(180deg);
 }
 
+.range-focus-reset {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 30px;
+  margin-top: 8px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(255, 243, 196, 0.1);
+  color: var(--cream);
+  font-size: 10px;
+  text-align: left;
+  cursor: pointer;
+  animation: panel-arrive 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.range-focus-reset:hover {
+  background: rgba(255, 243, 196, 0.16);
+  color: #fff9df;
+  transform: translateY(-1px);
+}
+
 .range-popover {
   position: absolute;
   top: calc(100% + 8px);

@@ -72,6 +72,7 @@ export default function Home() {
   const [autoRotate, setAutoRotate] = useState(false);
   const [fromDate, setFromDate] = useState('2022-01-01');
   const [toDate, setToDate] = useState('');
+  const [rangeFocusActive, setRangeFocusActive] = useState(false);
   const [playbackProgress, setPlaybackProgress] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(4);
@@ -144,11 +145,18 @@ export default function Home() {
   const focusMapDateRange = useCallback((nextFromDate: string, nextToDate: string) => {
     setFromDate(nextFromDate);
     setToDate(nextToDate);
+    setRangeFocusActive(true);
     setViewMode('all');
     setIsPlaying(false);
     progressRef.current = 1;
     setPlaybackProgress(1);
   }, []);
+
+  function clearDateRange() {
+    setFromDate('');
+    setToDate('');
+    setRangeFocusActive(false);
+  }
 
   function chooseView(nextMode: GlobeViewMode) {
     setViewMode(nextMode);
@@ -172,6 +180,7 @@ export default function Home() {
     setLoadMessage('');
     setFromDate('2022-01-01');
     setToDate('');
+    setRangeFocusActive(false);
     setProgress(0);
     setViewMode('all');
     progressRef.current = 1;
@@ -207,6 +216,7 @@ export default function Home() {
         setLoadMessage('Loaded locally · nothing was uploaded');
         setProgress(100);
         setViewMode('all');
+        setRangeFocusActive(false);
         progressRef.current = 1;
         setPlaybackProgress(1);
         worker.terminate();
@@ -353,14 +363,20 @@ export default function Home() {
           </summary>
           <div className="range-popover">
             <div className="range-fields">
-              <label>From<input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></label>
-              <label>To<input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} /></label>
+              <label>From<input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setRangeFocusActive(false); }} /></label>
+              <label>To<input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setRangeFocusActive(false); }} /></label>
             </div>
-            <div className="range-actions"><button type="button" onClick={() => { setFromDate(''); setToDate(''); }}>Full timeline</button><span>Default: since 2022</span></div>
+            <div className="range-actions"><button type="button" onClick={clearDateRange}>Full timeline</button><span>Default: since 2022</span></div>
             {rangeError && <p className="range-message" role="alert">End date must be on or after the start date.</p>}
             {!rangeError && !rangeHasData && <p className="range-message" role="status">No locations found in this range.</p>}
           </div>
         </details>
+
+        {rangeFocusActive && (
+          <button className="range-focus-reset" type="button" onClick={clearDateRange}>
+            <span aria-hidden="true">↺</span> Show full timeline
+          </button>
+        )}
 
         {viewMode === 'heatmap' && (
           <div className="heat-switch" role="group" aria-label="Heatmap metric">
