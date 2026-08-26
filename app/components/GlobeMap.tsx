@@ -208,7 +208,9 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
 
   useEffect(() => {
     let disposed = false;
-    let resizeObserver: ResizeObserver | null = null;
+    let mapResizeObserver: ResizeObserver | null = null;
+    let controlResizeObserver: ResizeObserver | null = null;
+    let syncMobilePadding: (() => void) | null = null;
 
     async function createMap() {
       if (!containerRef.current) return;
@@ -229,12 +231,34 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
         touchPitch: true,
       });
       mapRef.current = map;
+      syncMobilePadding = () => {
+        const isMobile = window.matchMedia('(max-width: 760px)').matches;
+        const controls = document.querySelector<HTMLElement>('.layer-panel');
+        const topbar = document.querySelector<HTMLElement>('.topbar');
+        const padding = isMobile && controls
+          ? {
+              top: topbar?.getBoundingClientRect().height ?? 66,
+              bottom: controls.getBoundingClientRect().height + 37,
+              left: 0,
+              right: 0,
+            }
+          : { top: 0, bottom: 0, left: 0, right: 0 };
+        map.setPadding(padding);
+      };
+
       if (typeof ResizeObserver !== 'undefined') {
-        resizeObserver = new ResizeObserver(() => {
+        mapResizeObserver = new ResizeObserver(() => {
           if (!disposed) map.resize();
         });
-        resizeObserver.observe(containerRef.current);
+        mapResizeObserver.observe(containerRef.current);
+        const controls = document.querySelector<HTMLElement>('.layer-panel');
+        if (controls) {
+          controlResizeObserver = new ResizeObserver(syncMobilePadding);
+          controlResizeObserver.observe(controls);
+        }
       }
+      window.addEventListener('resize', syncMobilePadding);
+      syncMobilePadding();
 
       map.on('load', () => {
         if (disposed) return;
@@ -400,7 +424,9 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     void createMap();
     return () => {
       disposed = true;
-      resizeObserver?.disconnect();
+      mapResizeObserver?.disconnect();
+      controlResizeObserver?.disconnect();
+      if (syncMobilePadding) window.removeEventListener('resize', syncMobilePadding);
       mapRef.current?.remove();
       mapRef.current = null;
       hasLoadedRef.current = false;
@@ -467,7 +493,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
         }
         const isMobile = window.matchMedia('(max-width: 760px)').matches;
         const padding = isMobile
-          ? { top: 48, bottom: 32, left: 24, right: 24 }
+          ? { top: 16, bottom: 16, left: 24, right: 24 }
           : { top: 140, bottom: 180, left: 320, right: 80 };
         map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding, maxZoom: 4.2, duration: 1200 });
         initialFitRef.current = true;

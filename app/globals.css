@@ -94,7 +94,6 @@ button {
 .roamline-shell {
   position: relative;
   min-height: 100svh;
-  --mobile-controls-height: 0px;
   overflow: hidden;
   isolation: isolate;
   background: radial-gradient(circle at 74% 47%, rgba(43, 58, 98, 0.24), transparent 28%), #080c15;
@@ -119,17 +118,6 @@ button {
   width: 100%;
   height: 100%;
   background: #080c15;
-}
-
-@media (max-width: 760px) {
-  .globe-layer {
-    top: 66px;
-    bottom: min(calc(var(--mobile-controls-height, 0px) + 37px), calc(100% - 180px));
-  }
-
-  .globe-canvas {
-    bottom: 0;
-  }
 }
 
 .map-detail-anchor {

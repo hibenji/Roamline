@@ -85,8 +85,6 @@ export default function Home() {
   const [mapReady, setMapReady] = useState(false);
   const workerRef = useRef<Worker | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const shellRef = useRef<HTMLElement | null>(null);
-  const layerPanelRef = useRef<HTMLElement | null>(null);
   const progressRef = useRef(playbackProgress);
   const prefersReducedMotionRef = useRef(false);
 
@@ -95,26 +93,6 @@ export default function Home() {
   useEffect(() => {
     progressRef.current = playbackProgress;
   }, [playbackProgress]);
-
-  useEffect(() => {
-    const shell = shellRef.current;
-    const panel = layerPanelRef.current;
-    if (!shell || !panel) return;
-
-    const updateControlHeight = () => {
-      shell.style.setProperty('--mobile-controls-height', `${panel.getBoundingClientRect().height}px`);
-    };
-
-    updateControlHeight();
-    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateControlHeight) : null;
-    observer?.observe(panel);
-    window.addEventListener('resize', updateControlHeight);
-
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener('resize', updateControlHeight);
-    };
-  }, []);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -309,7 +287,7 @@ export default function Home() {
         : 'Brighter means more route passages';
 
   return (
-    <main ref={shellRef} className={`roamline-shell ${viewMode === 'stats' ? 'is-stats' : ''} ${loadState === 'ready' ? 'has-loaded-file' : ''}`}>
+    <main className={`roamline-shell ${viewMode === 'stats' ? 'is-stats' : ''} ${loadState === 'ready' ? 'has-loaded-file' : ''}`}>
       <div className="atmosphere atmosphere-one" />
       <div className="atmosphere atmosphere-two" />
 
@@ -370,7 +348,7 @@ export default function Home() {
         {loadState !== 'error' && <div className="load-meta"><span className={`state-dot ${loadState}`} /> <span>{loadState === 'demo' ? 'Synthetic demo' : loadState === 'reading' ? loadMessage : loadLabel}</span><span className="local-chip">LOCAL ONLY</span></div>}
       </section>
 
-      <section ref={layerPanelRef} className="control-panel layer-panel">
+      <section className="control-panel layer-panel">
         <div className="panel-heading">
           <div>
             <div className="eyebrow">VIEW LAYERS</div>
