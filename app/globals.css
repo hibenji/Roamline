@@ -24,7 +24,7 @@ body {
   min-height: 100%;
   background: var(--night);
   color: var(--ink);
-  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 button,
@@ -338,16 +338,15 @@ button {
   margin: 19px 0 12px;
   color: #fbf8f0;
   font-size: clamp(36px, 4vw, 51px);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.065em;
   line-height: 0.95;
 }
 
 .intro-panel h1 em {
   color: var(--cream);
-  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
-  font-style: normal;
-  font-weight: 700;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 400;
 }
 
 .intro-copy {
@@ -842,6 +841,7 @@ button {
   background: linear-gradient(145deg, rgba(11, 18, 31, 0.92), rgba(12, 20, 34, 0.78));
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(22px);
+  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
   animation: stats-page-arrive 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -916,7 +916,7 @@ button {
 .stats-range-stamp strong i {
   margin: 0 4px;
   color: var(--orange);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
   font-size: 9px;
   font-style: normal;
 }
@@ -1422,8 +1422,9 @@ button {
 
 .stats-intro strong {
   color: #f8f2de;
+  font-family: Georgia, 'Times New Roman', serif;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .stats-intro strong span {
@@ -1522,8 +1523,9 @@ button {
 .timeline-dock-top > strong {
   margin-left: auto;
   color: #f7f0dc;
+  font-family: Georgia, 'Times New Roman', serif;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .timeline-time {
