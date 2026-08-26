@@ -337,7 +337,7 @@ export default function Home() {
           aria-label="Choose or drop a Google Timeline JSON export"
         >
           <input ref={fileInputRef} type="file" accept=".json,application/json" onChange={handleFileChange} hidden />
-          <span className="drop-icon" aria-hidden="true">↓</span>
+          <span className="drop-icon" aria-hidden="true">↑</span>
           <span className="drop-copy">
             <strong>{loadState === 'reading' ? `Reading ${loadLabel}` : 'Drop your Timeline JSON'}</strong>
             <small>{loadState === 'reading' ? `${progress}% · ${loadMessage}` : 'or click to browse · stays on your device'}</small>

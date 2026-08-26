@@ -562,8 +562,11 @@ button {
   border: 1px solid rgba(255, 243, 196, 0.2);
   border-radius: 10px;
   color: var(--cream);
+  font-family: Arial, Helvetica, sans-serif;
   font-size: 20px;
+  font-weight: 400;
   line-height: 1;
+  padding-bottom: 1px;
 }
 
 .drop-copy {
