@@ -1894,11 +1894,15 @@ input:focus-visible {
   }
 
   .layer-panel {
-    top: 460px;
+    top: auto;
+    right: 16px;
+    bottom: 25px;
+    width: auto;
+    padding-bottom: 105px;
   }
 
   .roamline-shell.has-loaded-file .layer-panel {
-    top: 82px;
+    top: auto;
   }
 
   .range-back-button {
@@ -1999,35 +2003,7 @@ input:focus-visible {
   }
 
   .stats-panel {
-    right: 16px;
-    bottom: 112px;
-    left: 16px;
-    grid-template-columns: repeat(3, 1fr);
-    min-height: 120px;
-  }
-
-  .stats-intro {
-    grid-column: 1 / -1;
-    min-height: 53px;
-    padding: 12px 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .stats-intro strong {
-    font-size: 13px;
-  }
-
-  .stat-item {
-    padding: 12px 15px;
-    border-left: 0;
-  }
-
-  .stat-item + .stat-item {
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .stat-item > strong {
-    font-size: 17px;
+    display: none;
   }
 
   .timeline-dock {
@@ -2036,6 +2012,19 @@ input:focus-visible {
     left: 16px;
     width: auto;
     padding: 12px 13px;
+    z-index: 3;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    opacity: 1;
+  }
+
+  .timeline-dock:hover,
+  .timeline-dock.is-visible {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .route-count {
