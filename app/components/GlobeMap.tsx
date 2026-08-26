@@ -186,21 +186,54 @@ function sourceData(timeline: NormalizedTimeline, playbackProgress: number, sele
   return { route, point };
 }
 
+const MAX_CONNECT_TIME_GAP_MS = 2 * 60 * 60 * 1000;
+const MIN_CONNECT_DISTANCE_METERS = 1_000;
+const MAX_CONNECT_DISTANCE_METERS = 150_000;
+
+function coordinateDistanceMeters(a: [number, number], b: [number, number]) {
+  const earthRadius = 6_371_008.8;
+  const lat1 = (a[1] * Math.PI) / 180;
+  const lat2 = (b[1] * Math.PI) / 180;
+  const deltaLat = lat2 - lat1;
+  const deltaLng = ((b[0] - a[0]) * Math.PI) / 180;
+  const haversine = Math.sin(deltaLat / 2) ** 2
+    + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+  return 2 * earthRadius * Math.asin(Math.min(1, Math.sqrt(haversine)));
+}
+
 function sequentialRouteData(timeline: NormalizedTimeline, selectedModes: ModeKey[]) {
   const selected = new Set(selectedModes);
-  const features = [];
-  for (let index = 1; index < timeline.playback.length; index += 1) {
-    const previous = timeline.playback[index - 1];
-    const current = timeline.playback[index];
-    const previousMode = previous.mode ?? 'other';
-    const currentMode = current.mode ?? 'other';
-    if (!selected.has(previousMode) || !selected.has(currentMode)) continue;
+  const boundaries = timeline.routes.features
+    .filter((route) => route.geometry.coordinates.length >= 2)
+    .map((route) => {
+      const coordinates = route.geometry.coordinates;
+      return {
+        start: coordinates[0],
+        end: coordinates[coordinates.length - 1],
+        startTime: route.properties.start,
+        endTime: route.properties.end,
+        mode: route.properties.mode,
+      };
+    })
+    .sort((a, b) => a.startTime - b.startTime);
+  const features: Array<{ type: 'Feature'; geometry: { type: 'LineString'; coordinates: [number, number][] }; properties: { mode: ModeKey; start: number; end: number } }> = [];
+
+  for (let index = 1; index < boundaries.length; index += 1) {
+    const previous = boundaries[index - 1];
+    const current = boundaries[index];
+    const timeGap = current.startTime - previous.endTime;
+    const distance = coordinateDistanceMeters(previous.end, current.start);
+    if (!selected.has(previous.mode) || !selected.has(current.mode)
+      || timeGap < 0 || timeGap > MAX_CONNECT_TIME_GAP_MS
+      || distance < MIN_CONNECT_DISTANCE_METERS || distance > MAX_CONNECT_DISTANCE_METERS) continue;
+
     features.push({
-      type: 'Feature' as const,
-      geometry: { type: 'LineString' as const, coordinates: [[previous.lng, previous.lat], [current.lng, current.lat]] as [number, number][] },
-      properties: { mode: currentMode, start: previous.time, end: current.time },
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: [previous.end, current.start] },
+      properties: { mode: current.mode, start: previous.endTime, end: current.startTime },
     });
   }
+
   return { type: 'FeatureCollection' as const, features };
 }
 
