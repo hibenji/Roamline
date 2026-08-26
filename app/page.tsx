@@ -287,7 +287,7 @@ export default function Home() {
         : 'Brighter means more route passages';
 
   return (
-    <main className={`roamline-shell ${viewMode === 'stats' ? 'is-stats' : ''}`}>
+    <main className={`roamline-shell ${viewMode === 'stats' ? 'is-stats' : ''} ${loadState === 'ready' ? 'has-loaded-file' : ''}`}>
       <div className="atmosphere atmosphere-one" />
       <div className="atmosphere atmosphere-two" />
 

@@ -478,6 +478,14 @@ button {
   animation: panel-arrive 650ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
 }
 
+.roamline-shell.has-loaded-file .intro-panel {
+  display: none;
+}
+
+.roamline-shell.has-loaded-file .layer-panel {
+  top: 112px;
+}
+
 .eyebrow {
   display: flex;
   align-items: center;
@@ -1850,12 +1858,15 @@ input:focus-visible {
 
 @media (max-width: 760px) {
   .roamline-shell {
-    min-height: 940px;
-    overflow-y: auto;
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .roamline-shell.is-stats {
-    min-height: 1500px;
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .topbar {
@@ -1883,7 +1894,11 @@ input:focus-visible {
   }
 
   .layer-panel {
-    top: 520px;
+    top: 460px;
+  }
+
+  .roamline-shell.has-loaded-file .layer-panel {
+    top: 82px;
   }
 
   .range-back-button {
