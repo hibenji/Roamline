@@ -55,6 +55,33 @@ describe('timeline normalizer', () => {
     expect(timeline.routes.features).toHaveLength(1);
   });
 
+  it('preserves route segment endpoints when playback is decimated', () => {
+    const start = Date.parse('2024-01-01T00:00:00Z');
+    const boundary = start + 7000 * 60_000;
+    const makePath = (count: number, offset: number, firstTime: number) => Array.from({ length: count }, (_, index) => ({
+      point: { latitude: 48 + offset + index * 0.00001, longitude: 16 + offset },
+      time: new Date(firstTime + index * 60_000).toISOString(),
+    }));
+
+    const timeline = normalizeTimeline({
+      semanticSegments: [
+        {
+          startTime: new Date(start).toISOString(),
+          endTime: new Date(boundary).toISOString(),
+          timelinePath: makePath(7001, 0, start),
+        },
+        {
+          startTime: new Date(boundary).toISOString(),
+          endTime: new Date(boundary + 7000 * 60_000).toISOString(),
+          timelinePath: makePath(7001, 1, boundary),
+        },
+      ],
+    });
+
+    expect(timeline.playback.some((point) => point.time === boundary && point.lat === 48.07)).toBe(true);
+    expect(timeline.playback.some((point) => point.time === boundary && point.lat === 49)).toBe(true);
+  });
+
   it('creates a self-contained synthetic demo without private fixture data', () => {
     const demo = createDemoTimeline();
     expect(demo.routes.features.length).toBeGreaterThan(1);

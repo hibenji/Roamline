@@ -232,6 +232,13 @@ function decimate(points: Point[], limit: number): Point[] {
   return result;
 }
 
+function decimateWithAnchors(points: Point[], limit: number, anchors: Point[]): Point[] {
+  if (points.length <= limit) return points;
+  return dedupePoints(
+    [...decimate(points, limit), ...anchors].sort((a, b) => a.time - b.time),
+  );
+}
+
 function getSegmentMode(
   start: number | undefined,
   end: number | undefined,
@@ -415,7 +422,11 @@ export function normalizeTimeline(payload: unknown): NormalizedTimeline {
   }
 
   const allPathPoints = paths.flatMap((path) => path.points).sort((a, b) => a.time - b.time);
-  const playback = decimate(dedupePoints(allPathPoints.length > 0 ? allPathPoints : rawPositions), MAX_PLAYBACK_POINTS);
+  const playbackPoints = allPathPoints.length > 0 ? allPathPoints : rawPositions;
+  const playbackAnchors = allPathPoints.length > 0
+    ? paths.flatMap((path) => [path.points[0], path.points[path.points.length - 1]])
+    : [];
+  const playback = decimateWithAnchors(dedupePoints(playbackPoints), MAX_PLAYBACK_POINTS, playbackAnchors);
   if (playback.length === 0 && visits.length === 0) {
     throw new Error('No recognizable locations were found in this file.');
   }
