@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import type { GeoJSONSource, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import type { ModeKey, NormalizedTimeline, Point } from '../timeline';
 
-export type GlobeViewMode = 'all' | 'replay' | 'heatmap';
+export type GlobeViewMode = 'all' | 'replay' | 'heatmap' | 'stats';
 export type HeatViewMode = 'dwell' | 'movement';
 
 type GlobeMapProps = {
@@ -68,21 +68,32 @@ const MAP_STYLE: StyleSpecification = {
 
 const emptyCollection = { type: 'FeatureCollection', features: [] } as const;
 
-function sourceData(timeline: NormalizedTimeline, playbackProgress: number) {
+function sourceData(timeline: NormalizedTimeline, playbackProgress: number, selectedModes: ModeKey[]) {
   const playbackIndex = Math.max(0, Math.min(timeline.playback.length - 1, Math.floor(playbackProgress * Math.max(0, timeline.playback.length - 1))));
+  const selected = new Set(selectedModes);
   const activePoints = timeline.playback.slice(0, playbackIndex + 1);
-  const currentPoint = timeline.playback[playbackIndex];
-  const route = activePoints.length > 1
-    ? {
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: activePoints.map((point) => [point.lng, point.lat]) },
-          properties: {},
-        }],
-      }
+  const routeFeatures: Array<{ type: 'Feature'; geometry: { type: 'LineString'; coordinates: [number, number][] }; properties: Record<string, never> }> = [];
+  let segment: Point[] = [];
+  const flushSegment = () => {
+    if (segment.length > 1) {
+      routeFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: segment.map((point) => [point.lng, point.lat]) },
+        properties: {},
+      });
+    }
+    segment = [];
+  };
+  for (const point of activePoints) {
+    if (selected.has(point.mode ?? 'other')) segment.push(point);
+    else flushSegment();
+  }
+  flushSegment();
+  const currentPoint = activePoints[activePoints.length - 1];
+  const route = routeFeatures.length > 0
+    ? { type: 'FeatureCollection', features: routeFeatures }
     : emptyCollection;
-  const point = currentPoint
+  const point = currentPoint && selected.has(currentPoint.mode ?? 'other')
     ? {
         type: 'FeatureCollection',
         features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [currentPoint.lng, currentPoint.lat] }, properties: {} }],
@@ -99,7 +110,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
   const initialFitRef = useRef(false);
   const timelineIdentityRef = useRef(timeline);
 
-  const playbackSources = useMemo(() => sourceData(timeline, playbackProgress), [timeline, playbackProgress]);
+  const playbackSources = useMemo(() => sourceData(timeline, playbackProgress, selectedModes), [timeline, playbackProgress, selectedModes]);
 
   useEffect(() => {
     let disposed = false;
@@ -252,7 +263,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     map.setFilter('timeline-heat-movement', modeFilter);
     map.setFilter('timeline-heat-dwell', modeFilter);
 
-    const routeVisible = viewMode === 'all' || viewMode === 'replay';
+    const routeVisible = viewMode === 'all';
     const replayVisible = viewMode === 'replay';
     const heatVisible = viewMode === 'heatmap';
     map.setLayoutProperty('timeline-route', 'visibility', routeVisible ? 'visible' : 'none');

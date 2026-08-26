@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import GlobeMap, { pointAtProgress, type GlobeViewMode, type HeatViewMode } from './components/GlobeMap';
+import StatsView from './components/StatsView';
 import TimelineWorker from './timeline.worker?worker';
 import {
   createDemoTimeline,
@@ -246,12 +247,14 @@ export default function Home() {
     ? 'Every route, one persistent layer'
     : viewMode === 'replay'
       ? 'Replay the shape of your days'
+    : viewMode === 'stats'
+      ? 'Patterns across your selected range'
       : heatMode === 'dwell'
         ? 'Brighter means more time spent'
         : 'Brighter means more route passages';
 
   return (
-    <main className="roamline-shell">
+    <main className={`roamline-shell ${viewMode === 'stats' ? 'is-stats' : ''}`}>
       <div className="atmosphere atmosphere-one" />
       <div className="atmosphere atmosphere-two" />
 
@@ -325,6 +328,7 @@ export default function Home() {
             ['all', 'All activity', '◉'],
             ['replay', 'Replay', '▶'],
             ['heatmap', 'Heatmap', '◌'],
+            ['stats', 'Stats', '✦'],
           ] as Array<[GlobeViewMode, string, string]>).map(([key, label, icon]) => (
             <button key={key} className={`view-tab ${viewMode === key ? 'is-active' : ''}`} onClick={() => chooseView(key)} type="button" role="tab" aria-selected={viewMode === key}>
               <span aria-hidden="true">{icon}</span>{label}
@@ -369,6 +373,8 @@ export default function Home() {
           <span className="toggle-track" aria-hidden="true"><span /></span>
         </label>
       </section>
+
+      {viewMode === 'stats' && <StatsView timeline={visibleTimeline} selectedModes={selectedModes} showVisits={showVisits} />}
 
       <section className="stats-panel" aria-label="Timeline summary">
         <div className="stats-intro"><span className="eyebrow">THE LONG VIEW</span><strong>{formatDate(visibleTimeline.coverage.start)} <span>→</span> {formatDate(visibleTimeline.coverage.end)}</strong></div>

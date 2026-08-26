@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { deriveTimelineStats } from './stats';
 import { createDemoTimeline, filterTimelineByDateRange, normalizeTimeline } from './timeline';
 
 describe('timeline normalizer', () => {
@@ -71,6 +72,21 @@ describe('timeline normalizer', () => {
     expect(filtered.heatPoints.features.length).toBeGreaterThan(0);
     expect(filtered.coverage.start).toBeGreaterThanOrEqual(Date.parse('2024-04-14T00:00:00Z'));
     expect(filtered.coverage.end).toBeLessThanOrEqual(Date.parse('2024-04-14T23:59:59.999Z'));
+  });
+
+  it('derives trend, rhythm, streak, and mode statistics from the visible timeline', () => {
+    const demo = createDemoTimeline();
+    const stats = deriveTimelineStats(demo, ['drive', 'walk', 'transit', 'flight'], true);
+    const walkingStats = deriveTimelineStats(demo, ['walk'], true);
+
+    expect(stats.trendGranularity).toBe('month');
+    expect(stats.trend[0].visits).toBe(3);
+    expect(stats.activeDays).toBe(4);
+    expect(stats.longestStreak).toBe(4);
+    expect(stats.topMode).toBe('flight');
+    expect(stats.peakHour).toBeDefined();
+    expect(walkingStats.topMode).toBe('walk');
+    expect(walkingStats.distanceMeters).toBeLessThan(stats.distanceMeters);
   });
 
   it.skipIf(!existsSync(resolve(process.cwd(), '..', 'Timeline.json')))('smoke-tests the included export', () => {
