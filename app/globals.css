@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 :root {
@@ -838,10 +838,14 @@ button {
   padding: 27px 30px 40px;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: linear-gradient(145deg, rgba(11, 18, 31, 0.92), rgba(12, 20, 34, 0.78));
+  background: rgba(11, 18, 31, 0.9);
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(22px);
-  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
+  font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+  --stats-accent: #9eb0bd;
+  --stats-accent-soft: rgba(158, 176, 189, 0.1);
+  --stats-muted: #8996a4;
+  --stats-ink: #e8edf0;
   animation: stats-page-arrive 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -864,24 +868,29 @@ button {
 
 .stats-page-heading h2 {
   margin: 15px 0 10px;
-  color: #fbf8f0;
+  color: var(--stats-ink);
   font-size: clamp(32px, 3vw, 45px);
   font-weight: 700;
   letter-spacing: -0.065em;
   line-height: 0.96;
 }
 
+.stats-page .eyebrow-dot {
+  background: var(--stats-accent);
+  box-shadow: 0 0 9px rgba(158, 176, 189, 0.45);
+}
+
 .stats-page-heading h2 em {
-  color: var(--cream);
-  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
+  color: #c6d1d8;
+  font-family: 'DM Sans', Arial, Helvetica, sans-serif;
   font-style: normal;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .stats-page-heading p {
   max-width: 470px;
   margin: 0;
-  color: var(--muted-strong);
+  color: var(--stats-muted);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -892,8 +901,8 @@ button {
   gap: 6px;
   min-width: 190px;
   padding: 12px 14px;
-  border-left: 2px solid var(--orange);
-  background: rgba(255, 128, 109, 0.06);
+  border-left: 2px solid var(--stats-accent);
+  background: rgba(158, 176, 189, 0.04);
 }
 
 .stats-range-stamp span,
@@ -908,15 +917,15 @@ button {
 }
 
 .stats-range-stamp strong {
-  color: #f4efdd;
+  color: #dce4e8;
   font-size: 13px;
   font-weight: 600;
 }
 
 .stats-range-stamp strong i {
   margin: 0 4px;
-  color: var(--orange);
-  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
+  color: var(--stats-accent);
+  font-family: 'DM Sans', Arial, Helvetica, sans-serif;
   font-size: 9px;
   font-style: normal;
 }
@@ -990,7 +999,7 @@ button {
 }
 
 .stats-kpi.accent-kpi strong {
-  color: #ffb4a7;
+  color: #c6d1d8;
 }
 
 .stats-chart-section,
@@ -1030,7 +1039,7 @@ button {
 }
 
 .section-kicker {
-  color: var(--orange);
+  color: var(--stats-accent);
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -1070,9 +1079,9 @@ button {
 
 .stats-metric-switch button:hover,
 .stats-metric-switch button[aria-pressed='true'] {
-  border-color: rgba(255, 128, 109, 0.27);
-  background: rgba(255, 128, 109, 0.1);
-  color: #ffb3a6;
+  border-color: rgba(158, 176, 189, 0.3);
+  background: var(--stats-accent-soft);
+  color: #d2dce1;
 }
 
 .trend-chart-wrap {
@@ -1099,14 +1108,14 @@ button {
 }
 
 .trend-area {
-  fill: rgba(255, 128, 109, 0.12);
+  fill: rgba(158, 176, 189, 0.1);
   transform-origin: center bottom;
   animation: chart-area-rise 800ms ease-out 350ms both;
 }
 
 .trend-line {
   fill: none;
-  stroke: var(--orange);
+  stroke: var(--stats-accent);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.5;
@@ -1116,8 +1125,8 @@ button {
 }
 
 .trend-point {
-  fill: var(--cream);
-  stroke: var(--orange);
+  fill: #dbe4e8;
+  stroke: var(--stats-accent);
   stroke-width: 2;
   transform-box: fill-box;
   transform-origin: center;
@@ -1195,8 +1204,9 @@ button {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #77d7ff, #89f5c9);
-  box-shadow: 0 0 12px rgba(119, 215, 255, 0.3);
+  background: var(--stats-accent);
+  opacity: 0.72;
+  box-shadow: none;
 }
 
 .country-stat-value {
@@ -1298,7 +1308,8 @@ button {
   display: block;
   height: 100%;
   border-radius: inherit;
-  box-shadow: 0 0 10px currentColor;
+  opacity: 0.72;
+  box-shadow: none;
 }
 
 .empty-stats {
@@ -1341,8 +1352,9 @@ button {
   width: 100%;
   min-height: 2px;
   border-radius: 5px 5px 2px 2px;
-  background: linear-gradient(180deg, var(--cream), var(--orange));
-  box-shadow: 0 0 13px rgba(255, 128, 109, 0.22);
+  background: var(--stats-accent);
+  opacity: 0.72;
+  box-shadow: none;
 }
 
 .weekday-column strong {
