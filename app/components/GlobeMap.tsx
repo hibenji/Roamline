@@ -66,7 +66,7 @@ const MAP_STYLE: StyleSpecification = {
   projection: { type: 'globe' },
 };
 
-const emptyCollection = { type: 'FeatureCollection', features: [] } as const;
+const emptyCollection = { type: 'FeatureCollection' as const, features: [] };
 
 function sourceData(timeline: NormalizedTimeline, playbackProgress: number, selectedModes: ModeKey[]) {
   const playbackIndex = Math.max(0, Math.min(timeline.playback.length - 1, Math.floor(playbackProgress * Math.max(0, timeline.playback.length - 1))));
@@ -312,6 +312,27 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     frame = requestAnimationFrame(rotate);
     return () => cancelAnimationFrame(frame);
   }, [autoRotate]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !hasLoadedRef.current || viewMode !== 'replay' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let frame = 0;
+    const pulse = (now: number) => {
+      if (!map.getLayer('timeline-playback-point')) return;
+      const wave = (Math.sin(now / 520) + 1) / 2;
+      map.setPaintProperty('timeline-playback-point', 'circle-radius', 5.5 + wave * 2.5);
+      map.setPaintProperty('timeline-playback-point', 'circle-opacity', 0.84 + wave * 0.16);
+      frame = requestAnimationFrame(pulse);
+    };
+    frame = requestAnimationFrame(pulse);
+    return () => {
+      cancelAnimationFrame(frame);
+      if (map.getLayer('timeline-playback-point')) {
+        map.setPaintProperty('timeline-playback-point', 'circle-radius', 6);
+        map.setPaintProperty('timeline-playback-point', 'circle-opacity', 1);
+      }
+    };
+  }, [viewMode]);
 
   return <div ref={containerRef} className="globe-canvas" aria-label="Interactive 3D globe showing your timeline" />;
 }
