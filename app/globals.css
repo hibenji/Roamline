@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 :root {
@@ -23,7 +24,7 @@ body {
   min-height: 100%;
   background: var(--night);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
 }
 
 button,
@@ -337,15 +338,16 @@ button {
   margin: 19px 0 12px;
   color: #fbf8f0;
   font-size: clamp(36px, 4vw, 51px);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.065em;
   line-height: 0.95;
 }
 
 .intro-panel h1 em {
   color: var(--cream);
-  font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 400;
+  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
+  font-style: normal;
+  font-weight: 700;
 }
 
 .intro-copy {
@@ -864,15 +866,16 @@ button {
   margin: 15px 0 10px;
   color: #fbf8f0;
   font-size: clamp(32px, 3vw, 45px);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.065em;
   line-height: 0.96;
 }
 
 .stats-page-heading h2 em {
   color: var(--cream);
-  font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 400;
+  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
+  font-style: normal;
+  font-weight: 700;
 }
 
 .stats-page-heading p {
@@ -906,9 +909,8 @@ button {
 
 .stats-range-stamp strong {
   color: #f4efdd;
-  font-family: Georgia, 'Times New Roman', serif;
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 600;
 }
 
 .stats-range-stamp strong i {
@@ -930,8 +932,10 @@ button {
 .stats-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 9px;
+  gap: 0;
   margin-top: 27px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stats-kpi {
@@ -939,11 +943,17 @@ button {
   flex-direction: column;
   justify-content: center;
   gap: 8px;
-  padding: 15px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.035);
+  padding: 15px 18px;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  background: transparent;
   animation: panel-arrive 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stats-kpi:first-child {
+  padding-left: 0;
+  border-left: 0;
 }
 
 .stats-kpi:nth-child(2) { animation-delay: 70ms; }
@@ -976,8 +986,7 @@ button {
 }
 
 .stats-kpi.accent-kpi {
-  border-color: rgba(255, 128, 109, 0.24);
-  background: linear-gradient(145deg, rgba(255, 128, 109, 0.11), rgba(255, 255, 255, 0.03));
+  background: transparent;
 }
 
 .stats-kpi.accent-kpi strong {
@@ -987,16 +996,34 @@ button {
 .stats-chart-section,
 .stats-detail-section,
 .signature-section {
-  margin-top: 10px;
-  padding: 18px 19px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  background: rgba(2, 7, 14, 0.24);
+  margin-top: 0;
+  padding: 22px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
-.stats-chart-section { animation: panel-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1) 250ms both; }
+.stats-chart-section {
+  margin-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  animation: panel-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1) 250ms both;
+}
+
+.stats-detail-grid {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .stats-detail-section { animation: panel-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1) 330ms both; }
-.signature-section { animation: panel-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1) 410ms both; }
+.stats-detail-section + .stats-detail-section {
+  padding-left: 24px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.signature-section {
+  margin-top: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  animation: panel-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1) 410ms both;
+}
 
 .stats-chart-section {
   margin-top: 18px;
@@ -1126,8 +1153,8 @@ button {
 
 .country-rank {
   color: #68778b;
-  font-family: Georgia, 'Times New Roman', serif;
   font-size: 11px;
+  font-weight: 700;
 }
 
 .country-stat-main {
@@ -1395,9 +1422,8 @@ button {
 
 .stats-intro strong {
   color: #f8f2de;
-  font-family: Georgia, 'Times New Roman', serif;
   font-size: 16px;
-  font-weight: 400;
+  font-weight: 600;
 }
 
 .stats-intro strong span {
@@ -1496,9 +1522,8 @@ button {
 .timeline-dock-top > strong {
   margin-left: auto;
   color: #f7f0dc;
-  font-family: Georgia, 'Times New Roman', serif;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 600;
 }
 
 .timeline-time {
@@ -1687,6 +1712,16 @@ input:focus-visible {
     padding: 13px;
   }
 
+  .stats-kpi:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .stats-kpi:nth-child(even) {
+    padding-left: 13px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
   .stats-kpi strong {
     font-size: 18px;
   }
@@ -1706,6 +1741,12 @@ input:focus-visible {
 
   .stats-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stats-detail-section + .stats-detail-section {
+    padding-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 0;
   }
 
   .country-stat-name {
