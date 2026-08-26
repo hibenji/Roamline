@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import GlobeMap, { pointAtProgress, type GlobeViewMode, type HeatViewMode } from './components/GlobeMap';
 import StatsView from './components/StatsView';
 import TimelineWorker from './timeline.worker?worker';
@@ -23,13 +23,13 @@ const MODES: Array<{ key: ModeKey; label: string; short: string }> = [
 ];
 
 const modeColors: Record<ModeKey, string> = {
-  drive: '#ff806d',
-  walk: '#89f5c9',
-  cycle: '#ffd166',
-  transit: '#77d7ff',
-  flight: '#c4b5fd',
-  water: '#60a5fa',
-  other: '#a8b1c2',
+  drive: '#df563e',
+  walk: '#3c9b61',
+  cycle: '#dda11c',
+  transit: '#4387bb',
+  flight: '#8058b4',
+  water: '#299a98',
+  other: '#68727c',
 };
 
 function formatDate(timestamp: number, includeYear = true) {
@@ -362,8 +362,8 @@ export default function Home() {
         <div className="filter-heading"><span>ACTIVITY</span><button type="button" onClick={() => setSelectedModes(allModesSelected ? [] : MODES.map((mode) => mode.key))}>{allModesSelected ? 'Clear' : 'All modes'}</button></div>
         <div className="mode-filters">
           {MODES.map((mode) => (
-            <button key={mode.key} className={`mode-pill ${selectedModes.includes(mode.key) ? 'is-selected' : ''}`} onClick={() => toggleMode(mode.key)} type="button">
-              <span className="mode-dot" style={{ backgroundColor: modeColors[mode.key] }} />{mode.short}
+            <button key={mode.key} className={`mode-pill ${selectedModes.includes(mode.key) ? 'is-selected' : ''}`} onClick={() => toggleMode(mode.key)} style={{ '--mode-color': modeColors[mode.key] } as CSSProperties} type="button">
+              <span className="mode-dot" aria-hidden="true" />{mode.short}
             </button>
           ))}
         </div>
