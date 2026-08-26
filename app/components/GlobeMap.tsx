@@ -208,6 +208,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
 
   useEffect(() => {
     let disposed = false;
+    let resizeObserver: ResizeObserver | null = null;
 
     async function createMap() {
       if (!containerRef.current) return;
@@ -228,6 +229,12 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
         touchPitch: true,
       });
       mapRef.current = map;
+      if (typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(() => {
+          if (!disposed) map.resize();
+        });
+        resizeObserver.observe(containerRef.current);
+      }
 
       map.on('load', () => {
         if (disposed) return;
@@ -393,6 +400,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     void createMap();
     return () => {
       disposed = true;
+      resizeObserver?.disconnect();
       mapRef.current?.remove();
       mapRef.current = null;
       hasLoadedRef.current = false;
@@ -459,7 +467,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
         }
         const isMobile = window.matchMedia('(max-width: 760px)').matches;
         const padding = isMobile
-          ? { top: 84, bottom: 560, left: 24, right: 24 }
+          ? { top: 48, bottom: 32, left: 24, right: 24 }
           : { top: 140, bottom: 180, left: 320, right: 80 };
         map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding, maxZoom: 4.2, duration: 1200 });
         initialFitRef.current = true;
