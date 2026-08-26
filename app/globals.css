@@ -872,6 +872,10 @@ button {
   box-shadow: 0 0 9px rgba(158, 176, 189, 0.45);
 }
 
+.stats-page .eyebrow {
+  font-size: 10px;
+}
+
 .stats-page-heading h2 em {
   color: #c6d1d8;
   font-family: 'DM Sans', Arial, Helvetica, sans-serif;
@@ -883,7 +887,7 @@ button {
   max-width: 470px;
   margin: 0;
   color: var(--stats-muted);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -902,7 +906,7 @@ button {
 .stats-kpi > span,
 .signature-grid span {
   color: #75849a;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -910,7 +914,7 @@ button {
 
 .stats-range-stamp strong {
   color: #dce4e8;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -918,13 +922,13 @@ button {
   margin: 0 4px;
   color: var(--stats-accent);
   font-family: 'DM Sans', Arial, Helvetica, sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-style: normal;
 }
 
 .stats-range-stamp small {
   color: #8c9aac;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 400;
   letter-spacing: 0.02em;
   text-transform: none;
@@ -964,7 +968,7 @@ button {
 .stats-kpi strong {
   overflow: hidden;
   color: #f7f1de;
-  font-size: 23px;
+  font-size: 24px;
   font-weight: 500;
   letter-spacing: -0.04em;
   text-overflow: ellipsis;
@@ -973,7 +977,7 @@ button {
 
 .stats-kpi strong em {
   color: #9da8b8;
-  font-size: 12px;
+  font-size: 13px;
   font-style: normal;
   letter-spacing: 0;
 }
@@ -981,7 +985,7 @@ button {
 .stats-kpi small {
   overflow: hidden;
   color: #8c99aa;
-  font-size: 9px;
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1032,7 +1036,7 @@ button {
 
 .section-kicker {
   color: var(--stats-accent);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.16em;
 }
@@ -1040,7 +1044,7 @@ button {
 .stats-section-heading h3 {
   margin: 6px 0 4px;
   color: #f2eee3;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 500;
   letter-spacing: -0.03em;
 }
@@ -1049,7 +1053,7 @@ button {
 .detail-note {
   margin: 0;
   color: #7e8ca0;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .stats-metric-switch {
@@ -1065,7 +1069,7 @@ button {
   border-radius: 6px;
   background: transparent;
   color: #7e8ca0;
-  font-size: 9px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -1096,7 +1100,7 @@ button {
 .chart-axis-label,
 .chart-x-label {
   fill: #7f8da0;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .trend-area {
@@ -1154,7 +1158,7 @@ button {
 
 .country-rank {
   color: #68778b;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -1172,7 +1176,7 @@ button {
 .country-stat-name strong {
   overflow: hidden;
   color: #d7d9d6;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1181,7 +1185,7 @@ button {
 .country-stat-name small {
   flex: 0 0 auto;
   color: #77869a;
-  font-size: 8px;
+  font-size: 9px;
 }
 
 .country-stat-track {
@@ -1204,7 +1208,7 @@ button {
 .country-stat-value {
   min-width: 58px;
   color: #f1eee2;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   text-align: right;
   white-space: nowrap;
@@ -1222,7 +1226,7 @@ button {
   min-height: 31px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   color: #abb6c4;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .year-stat-row:last-child {
@@ -1231,7 +1235,7 @@ button {
 
 .year-stat-row strong {
   color: #f2eee1;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -1244,7 +1248,7 @@ button {
   min-height: 22px;
   border-bottom-color: rgba(255, 255, 255, 0.11);
   color: #738197;
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.09em;
 }
@@ -1271,7 +1275,7 @@ button {
   align-items: center;
   gap: 8px;
   color: #bfc8d2;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .mode-stat-label .mode-dot {
@@ -1284,7 +1288,7 @@ button {
 .mode-stat-label strong {
   margin-left: auto;
   color: #ece9df;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -1307,7 +1311,7 @@ button {
 .empty-stats {
   margin: 18px 0 0;
   color: #8c99aa;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .weekday-chart {
@@ -1351,13 +1355,13 @@ button {
 
 .weekday-column strong {
   color: #c5ccd6;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
 }
 
 .weekday-column small {
   color: #75849a;
-  font-size: 8px;
+  font-size: 9px;
 }
 
 .signature-section {
@@ -1380,7 +1384,7 @@ button {
 .signature-grid strong {
   overflow: hidden;
   color: #f1eee3;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1389,7 +1393,7 @@ button {
 .signature-grid small {
   overflow: hidden;
   color: #7e8ca0;
-  font-size: 9px;
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
