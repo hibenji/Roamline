@@ -73,6 +73,7 @@ export default function Home() {
   const [fromDate, setFromDate] = useState('2022-01-01');
   const [toDate, setToDate] = useState('');
   const [rangeFocusActive, setRangeFocusActive] = useState(false);
+  const [previousRange, setPreviousRange] = useState<{ fromDate: string; toDate: string } | null>(null);
   const [playbackProgress, setPlaybackProgress] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(4);
@@ -143,6 +144,7 @@ export default function Home() {
   const allModesSelected = selectedModes.length === MODES.length;
 
   const focusMapDateRange = useCallback((nextFromDate: string, nextToDate: string) => {
+    setPreviousRange({ fromDate, toDate });
     setFromDate(nextFromDate);
     setToDate(nextToDate);
     setRangeFocusActive(true);
@@ -150,12 +152,22 @@ export default function Home() {
     setIsPlaying(false);
     progressRef.current = 1;
     setPlaybackProgress(1);
-  }, []);
+  }, [fromDate, toDate]);
 
   function clearDateRange() {
     setFromDate('');
     setToDate('');
     setRangeFocusActive(false);
+    setPreviousRange(null);
+  }
+
+  function goBackFromFocusedRange() {
+    if (previousRange) {
+      setFromDate(previousRange.fromDate);
+      setToDate(previousRange.toDate);
+    }
+    setRangeFocusActive(false);
+    setPreviousRange(null);
   }
 
   function chooseView(nextMode: GlobeViewMode) {
@@ -181,6 +193,7 @@ export default function Home() {
     setFromDate('2022-01-01');
     setToDate('');
     setRangeFocusActive(false);
+    setPreviousRange(null);
     setProgress(0);
     setViewMode('all');
     progressRef.current = 1;
@@ -217,6 +230,7 @@ export default function Home() {
         setProgress(100);
         setViewMode('all');
         setRangeFocusActive(false);
+        setPreviousRange(null);
         progressRef.current = 1;
         setPlaybackProgress(1);
         worker.terminate();
@@ -363,8 +377,8 @@ export default function Home() {
           </summary>
           <div className="range-popover">
             <div className="range-fields">
-              <label>From<input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setRangeFocusActive(false); }} /></label>
-              <label>To<input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setRangeFocusActive(false); }} /></label>
+              <label>From<input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setRangeFocusActive(false); setPreviousRange(null); }} /></label>
+              <label>To<input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setRangeFocusActive(false); setPreviousRange(null); }} /></label>
             </div>
             <div className="range-actions"><button type="button" onClick={clearDateRange}>Full timeline</button><span>Default: since 2022</span></div>
             {rangeError && <p className="range-message" role="alert">End date must be on or after the start date.</p>}
@@ -373,8 +387,8 @@ export default function Home() {
         </details>
 
         {rangeFocusActive && (
-          <button className="range-focus-reset" type="button" onClick={clearDateRange}>
-            <span aria-hidden="true">↺</span> Show full timeline
+          <button className="range-focus-reset" type="button" onClick={goBackFromFocusedRange}>
+            <span aria-hidden="true">←</span> Back
           </button>
         )}
 
