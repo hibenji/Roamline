@@ -386,12 +386,6 @@ export default function Home() {
           </div>
         </details>
 
-        {rangeFocusActive && (
-          <button className="range-focus-reset" type="button" onClick={goBackFromFocusedRange}>
-            <span aria-hidden="true">←</span> Back
-          </button>
-        )}
-
         {viewMode === 'heatmap' && (
           <div className="heat-switch" role="group" aria-label="Heatmap metric">
             <button className={heatMode === 'dwell' ? 'is-active' : ''} onClick={() => setHeatMode('dwell')} type="button"><span className="heat-swatch dwell" />Time spent</button>
@@ -413,6 +407,12 @@ export default function Home() {
           <span className="toggle-track" aria-hidden="true"><span /></span>
         </label>
       </section>
+
+      {rangeFocusActive && (
+        <button className="range-back-button" type="button" onClick={goBackFromFocusedRange}>
+          <span aria-hidden="true">←</span> Back
+        </button>
+      )}
 
       {viewMode === 'stats' && <StatsView timeline={visibleTimeline} selectedModes={selectedModes} showVisits={showVisits} />}
 
