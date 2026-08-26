@@ -122,8 +122,13 @@ button {
 }
 
 @media (max-width: 760px) {
-  .globe-canvas {
+  .globe-layer {
+    top: 66px;
     bottom: min(calc(var(--mobile-controls-height, 0px) + 37px), calc(100% - 180px));
+  }
+
+  .globe-canvas {
+    bottom: 0;
   }
 }
 
