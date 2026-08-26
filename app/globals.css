@@ -1344,8 +1344,8 @@ button {
   width: 100%;
   min-height: 2px;
   border-radius: 5px 5px 2px 2px;
-  background: var(--stats-accent);
-  opacity: 0.72;
+  background: #eef2f1;
+  opacity: 1;
   box-shadow: none;
 }
 
