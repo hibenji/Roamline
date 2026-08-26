@@ -21,13 +21,13 @@ const MODE_LABELS: Record<ModeKey, string> = {
 };
 
 const MODE_COLORS: Record<ModeKey, string> = {
-  drive: '#d6533f',
-  walk: '#3b915f',
-  cycle: '#d49a1d',
-  transit: '#3d78ad',
-  flight: '#7854a8',
-  water: '#258f8f',
-  other: '#59636d',
+  drive: '#df563e',
+  walk: '#3c9b61',
+  cycle: '#dda11c',
+  transit: '#4387bb',
+  flight: '#8058b4',
+  water: '#299a98',
+  other: '#68727c',
 };
 
 function formatCount(value: number) {

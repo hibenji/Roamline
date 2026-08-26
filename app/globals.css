@@ -1308,7 +1308,7 @@ button {
   display: block;
   height: 100%;
   border-radius: inherit;
-  opacity: 0.72;
+  opacity: 1;
   box-shadow: none;
 }
 
