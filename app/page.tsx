@@ -69,6 +69,7 @@ export default function Home() {
   const [heatMode, setHeatMode] = useState<HeatViewMode>('dwell');
   const [selectedModes, setSelectedModes] = useState<ModeKey[]>(MODES.map((mode) => mode.key));
   const [showVisits, setShowVisits] = useState(true);
+  const [connectSequential, setConnectSequential] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [fromDate, setFromDate] = useState('2022-01-01');
   const [toDate, setToDate] = useState('');
@@ -196,6 +197,7 @@ export default function Home() {
     setPreviousRange(null);
     setProgress(0);
     setViewMode('all');
+    setConnectSequential(false);
     progressRef.current = 1;
     setPlaybackProgress(1);
     setIsPlaying(false);
@@ -297,6 +299,7 @@ export default function Home() {
         heatMode={heatMode}
         selectedModes={selectedModes}
         showVisits={showVisits}
+        connectSequential={connectSequential}
         playbackProgress={playbackProgress}
         autoRotate={autoRotate}
         onMapReady={handleMapReady}
@@ -403,6 +406,11 @@ export default function Home() {
         <label className="toggle-row">
           <span><span className="toggle-icon" aria-hidden="true">⌖</span> Show visited places</span>
           <input type="checkbox" checked={showVisits} onChange={(event) => setShowVisits(event.target.checked)} />
+          <span className="toggle-track" aria-hidden="true"><span /></span>
+        </label>
+        <label className="toggle-row">
+          <span><span className="toggle-icon" aria-hidden="true">↝</span> Connect timeline points</span>
+          <input type="checkbox" checked={connectSequential} onChange={(event) => setConnectSequential(event.target.checked)} />
           <span className="toggle-track" aria-hidden="true"><span /></span>
         </label>
       </section>

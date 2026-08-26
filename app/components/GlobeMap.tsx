@@ -15,6 +15,7 @@ type GlobeMapProps = {
   heatMode: HeatViewMode;
   selectedModes: ModeKey[];
   showVisits: boolean;
+  connectSequential: boolean;
   playbackProgress: number;
   autoRotate: boolean;
   onMapReady?: () => void;
@@ -185,7 +186,25 @@ function sourceData(timeline: NormalizedTimeline, playbackProgress: number, sele
   return { route, point };
 }
 
-export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, showVisits, playbackProgress, autoRotate, onMapReady, onFocusRange }: GlobeMapProps) {
+function sequentialRouteData(timeline: NormalizedTimeline, selectedModes: ModeKey[]) {
+  const selected = new Set(selectedModes);
+  const features = [];
+  for (let index = 1; index < timeline.playback.length; index += 1) {
+    const previous = timeline.playback[index - 1];
+    const current = timeline.playback[index];
+    const previousMode = previous.mode ?? 'other';
+    const currentMode = current.mode ?? 'other';
+    if (!selected.has(previousMode) || !selected.has(currentMode)) continue;
+    features.push({
+      type: 'Feature' as const,
+      geometry: { type: 'LineString' as const, coordinates: [[previous.lng, previous.lat], [current.lng, current.lat]] as [number, number][] },
+      properties: { mode: currentMode, start: previous.time, end: current.time },
+    });
+  }
+  return { type: 'FeatureCollection' as const, features };
+}
+
+export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, showVisits, connectSequential, playbackProgress, autoRotate, onMapReady, onFocusRange }: GlobeMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const hasLoadedRef = useRef(false);
@@ -197,6 +216,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
   const [selectedDetail, setSelectedDetail] = useState<MapDetail | null>(null);
 
   const playbackSources = useMemo(() => sourceData(timeline, playbackProgress, selectedModes), [timeline, playbackProgress, selectedModes]);
+  const sequentialRoute = useMemo(() => sequentialRouteData(timeline, selectedModes), [timeline, selectedModes]);
 
   useEffect(() => {
     viewModeRef.current = viewMode;
@@ -267,6 +287,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
         map.addSource('timeline-heat', { type: 'geojson', data: emptyCollection });
         map.addSource('timeline-playback-route', { type: 'geojson', data: emptyCollection });
         map.addSource('timeline-playback-point', { type: 'geojson', data: emptyCollection });
+        map.addSource('timeline-connected-route', { type: 'geojson', data: emptyCollection });
 
         const modeExpression: any = ['match', ['get', 'mode']];
         for (const mode of Object.keys(ROUTE_COLORS) as ModeKey[]) modeExpression.push(mode, ROUTE_COLORS[mode]);
@@ -285,6 +306,13 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
           source: 'timeline-routes',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: { 'line-color': modeExpression, 'line-width': 2.2, 'line-opacity': 0.82 },
+        });
+        map.addLayer({
+          id: 'timeline-connected-route',
+          type: 'line',
+          source: 'timeline-connected-route',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#dbe4ec', 'line-width': 1.5, 'line-opacity': 0.42, 'line-dasharray': [1.2, 2.4] },
         });
         map.addLayer({
           id: 'timeline-route-hit',
@@ -367,10 +395,11 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
         const handleMapClick = (event: any) => {
           if (viewModeRef.current !== 'all') return;
           const features = map.queryRenderedFeatures(event.point, {
-            layers: ['timeline-visits', 'timeline-route-hit', 'timeline-route'],
+            layers: ['timeline-visits', 'timeline-route-hit', 'timeline-route', 'timeline-connected-route'],
           });
           const feature = features.find((candidate: any) => candidate.layer?.id === 'timeline-visits')
-            ?? features.find((candidate: any) => candidate.layer?.id === 'timeline-route-hit' || candidate.layer?.id === 'timeline-route');
+            ?? features.find((candidate: any) => candidate.layer?.id === 'timeline-route-hit' || candidate.layer?.id === 'timeline-route')
+            ?? features.find((candidate: any) => candidate.layer?.id === 'timeline-connected-route');
           if (!feature) {
             closeDetail();
             return;
@@ -405,7 +434,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
             return;
           }
           const features = map.queryRenderedFeatures(event.point, {
-            layers: ['timeline-visits', 'timeline-route-hit', 'timeline-route'],
+            layers: ['timeline-visits', 'timeline-route-hit', 'timeline-route', 'timeline-connected-route'],
           });
           map.getCanvas().style.cursor = features.length > 0 ? 'pointer' : '';
         };
@@ -447,11 +476,13 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     const heatSource = map.getSource('timeline-heat') as GeoJSONSource | undefined;
     const replayRouteSource = map.getSource('timeline-playback-route') as GeoJSONSource | undefined;
     const replayPointSource = map.getSource('timeline-playback-point') as GeoJSONSource | undefined;
+    const connectedRouteSource = map.getSource('timeline-connected-route') as GeoJSONSource | undefined;
     routeSource?.setData(timeline.routes as any);
     visitSource?.setData(timeline.visits as any);
     heatSource?.setData(timeline.heatPoints as any);
     replayRouteSource?.setData(playbackSources.route as any);
     replayPointSource?.setData(playbackSources.point as any);
+    connectedRouteSource?.setData(sequentialRoute as any);
 
     const modeFilter: any = selectedModes.length > 0
       ? ['match', ['get', 'mode'], selectedModes, true, false]
@@ -459,6 +490,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     map.setFilter('timeline-route', modeFilter);
     map.setFilter('timeline-route-glow', modeFilter);
     map.setFilter('timeline-route-hit', modeFilter);
+    map.setFilter('timeline-connected-route', modeFilter);
     map.setFilter('timeline-heat-movement', modeFilter);
     map.setFilter('timeline-heat-dwell', modeFilter);
 
@@ -468,6 +500,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     map.setLayoutProperty('timeline-route', 'visibility', routeVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-route-glow', 'visibility', routeVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-route-hit', 'visibility', routeVisible ? 'visible' : 'none');
+    map.setLayoutProperty('timeline-connected-route', 'visibility', routeVisible && connectSequential ? 'visible' : 'none');
     map.setLayoutProperty('timeline-playback-route', 'visibility', replayVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-playback-point', 'visibility', replayVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-heat-movement', 'visibility', heatVisible && heatMode === 'movement' ? 'visible' : 'none');
@@ -499,7 +532,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
         initialFitRef.current = true;
       }
     }
-  }, [timeline, playbackSources, viewMode, heatMode, selectedModes, showVisits]);
+  }, [timeline, playbackSources, sequentialRoute, viewMode, heatMode, selectedModes, showVisits, connectSequential]);
 
   useEffect(() => {
     const map = mapRef.current;

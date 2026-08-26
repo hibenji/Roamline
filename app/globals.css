@@ -975,6 +975,12 @@ button {
   cursor: pointer;
 }
 
+.toggle-row + .toggle-row {
+  margin-top: 0;
+  padding-top: 10px;
+  border-top: 0;
+}
+
 .toggle-icon {
   margin-right: 7px;
   color: var(--orange);
