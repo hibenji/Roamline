@@ -518,9 +518,11 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     ? `${MODE_LABELS[selectedDetail.mode ?? 'other']} route`
     : 'Place visit';
   const detailMetricLabel = selectedDetail?.kind === 'route' ? 'DISTANCE' : 'TIME THERE';
-  const detailMetricValue = selectedDetail?.kind === 'route'
-    ? formatDetailDistance(selectedDetail.distanceMeters)
-    : formatDetailDuration(selectedDetail.durationMinutes ?? ((selectedDetail.end - selectedDetail.start) / 60_000));
+  const detailMetricValue = selectedDetail
+    ? selectedDetail.kind === 'route'
+      ? formatDetailDistance(selectedDetail.distanceMeters)
+      : formatDetailDuration(selectedDetail.durationMinutes ?? ((selectedDetail.end - selectedDetail.start) / 60_000))
+    : '';
 
   return (
     <div className="globe-layer">
