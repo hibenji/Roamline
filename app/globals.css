@@ -619,7 +619,7 @@ button {
 
 .layer-panel {
   position: absolute;
-  top: 420px;
+  top: 480px;
   left: 30px;
   width: min(356px, calc(100vw - 60px));
   padding: 17px;
@@ -1883,7 +1883,7 @@ input:focus-visible {
   }
 
   .layer-panel {
-    top: 470px;
+    top: 520px;
   }
 
   .range-back-button {
