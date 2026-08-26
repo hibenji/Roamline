@@ -206,6 +206,26 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
         </section>
       </div>
 
+      <div className="stats-detail-grid country-year-grid">
+        <section className="stats-detail-section" aria-labelledby="country-breakdown-title">
+          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">WHERE YOU WERE</span><h3 id="country-breakdown-title">Time by country</h3></div><span className="detail-note">Local estimate</span></div>
+          <div className="country-stat-list">
+            {stats.countryBreakdown.length > 0 ? stats.countryBreakdown.slice(0, 8).map((entry, index) => {
+              const maxMinutes = Math.max(1, stats.countryBreakdown[0]?.minutes ?? 0);
+              return <div className="country-stat-row" key={entry.country}><span className="country-rank">{String(index + 1).padStart(2, '0')}</span><div className="country-stat-main"><div className="country-stat-name"><strong>{entry.country}</strong><small>{entry.visits > 0 ? `${formatCount(entry.visits)} visits` : `${formatCount(Math.round(entry.movementPoints))} movement points`}</small></div><div className="country-stat-track"><span style={{ width: `${entry.minutes > 0 ? Math.max(3, entry.minutes / maxMinutes * 100) : 3}%` }} /></div></div><strong className="country-stat-value">{entry.minutes > 0 ? formatDuration(entry.minutes) : 'Travel only'}</strong></div>;
+            }) : <p className="empty-stats">No country-level locations were recognized in this range.</p>}
+          </div>
+        </section>
+
+        <section className="stats-detail-section" aria-labelledby="year-breakdown-title">
+          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">THE YEARS</span><h3 id="year-breakdown-title">Year by year</h3></div><span className="detail-note">Selected range</span></div>
+          <div className="year-stat-table" role="table" aria-label="Year by year timeline statistics">
+            <div className="year-stat-row year-stat-header" role="row"><span>YEAR</span><span>DAYS</span><span>DISTANCE</span><span>PLACES</span><span>TIME AT PLACES</span></div>
+            {stats.yearBreakdown.length > 0 ? stats.yearBreakdown.map((entry) => <div className="year-stat-row" role="row" key={entry.year}><strong>{entry.year}</strong><span>{formatCount(entry.activeDays)}</span><span>{formatDistance(entry.distanceMeters)}</span><span>{formatCount(entry.visits)}</span><span>{formatDuration(entry.dwellMinutes)}</span></div>) : <p className="empty-stats">No year-level activity in this range.</p>}
+          </div>
+        </section>
+      </div>
+
       <section className="signature-section" aria-labelledby="signature-title">
         <div className="stats-section-heading compact-heading"><div><span className="section-kicker">THE SMALL DETAILS</span><h3 id="signature-title">Your timeline signature</h3></div></div>
         <div className="signature-grid">

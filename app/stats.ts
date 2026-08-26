@@ -1,4 +1,5 @@
 import type { ModeKey, NormalizedTimeline } from './timeline';
+import { countryForPoint } from './country';
 
 export type TrendMetric = 'days' | 'distance' | 'visits';
 
@@ -8,6 +9,23 @@ export type TrendBucket = {
   activeDays: number;
   distanceMeters: number;
   visits: number;
+  movementPoints: number;
+};
+
+export type CountryStat = {
+  country: string;
+  minutes: number;
+  visits: number;
+  movementPoints: number;
+  share: number;
+};
+
+export type YearStat = {
+  year: string;
+  activeDays: number;
+  distanceMeters: number;
+  visits: number;
+  dwellMinutes: number;
   movementPoints: number;
 };
 
@@ -29,6 +47,8 @@ export type TimelineAnalysis = {
   hourlyCounts: number[];
   trendGranularity: 'year' | 'month';
   trend: TrendBucket[];
+  countryBreakdown: CountryStat[];
+  yearBreakdown: YearStat[];
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -50,6 +70,10 @@ function bucketLabel(key: string, granularity: 'year' | 'month') {
   const [year, month] = key.split('-').map(Number);
   return new Intl.DateTimeFormat('en', { month: 'short', year: '2-digit', timeZone: 'UTC' })
     .format(Date.UTC(year, month - 1, 1));
+}
+
+function locationKey(lat: number, lng: number, start: number, end: number) {
+  return `${lat.toFixed(4)}:${lng.toFixed(4)}:${start}:${end}`;
 }
 
 function lineDistance(coordinates: [number, number][]) {
@@ -86,6 +110,25 @@ export function deriveTimelineStats(
   const routes = timeline.routes.features.filter((route) => selected.has(route.properties.mode));
   const playback = timeline.playback.filter((point) => selected.has(point.mode ?? 'other'));
   const visits = includeVisits ? timeline.visits.features : [];
+  const countryMap = new Map<string, { minutes: number; visits: number; movementPoints: number }>();
+  const visitSampleKeys = new Set(timeline.visits.features.map((visit) => locationKey(
+    visit.geometry.coordinates[1],
+    visit.geometry.coordinates[0],
+    visit.properties.start,
+    visit.properties.end,
+  )));
+  const countryCache = new Map<string, string | undefined>();
+  const addCountry = (lat: number, lng: number, minutes: number, movementPoints: number, visitCount: number) => {
+    const cacheKey = `${lat.toFixed(4)}:${lng.toFixed(4)}`;
+    if (!countryCache.has(cacheKey)) countryCache.set(cacheKey, countryForPoint(lat, lng));
+    const country = countryCache.get(cacheKey);
+    if (!country) return;
+    const existing = countryMap.get(country) ?? { minutes: 0, visits: 0, movementPoints: 0 };
+    existing.minutes += minutes;
+    existing.visits += visitCount;
+    existing.movementPoints += movementPoints;
+    countryMap.set(country, existing);
+  };
   const spanDays = Math.max(1, (timeline.coverage.end - timeline.coverage.start) / DAY_MS);
   const trendGranularity: 'year' | 'month' = spanDays > 900 ? 'year' : 'month';
   const buckets = new Map<string, TrendBucket>();
@@ -107,6 +150,18 @@ export function deriveTimelineStats(
 
   const activeDates = new Set<string>();
   const dateCounts = new Map<string, number>();
+  const yearMap = new Map<string, { activeDays: Set<string>; distanceMeters: number; visits: number; dwellMinutes: number; movementPoints: number }>();
+  const ensureYear = (timestamp: number) => {
+    const year = String(new Date(timestamp).getUTCFullYear());
+    const bucket = yearMap.get(year) ?? { activeDays: new Set<string>(), distanceMeters: 0, visits: 0, dwellMinutes: 0, movementPoints: 0 };
+    yearMap.set(year, bucket);
+    return { year, bucket };
+  };
+  const addYearTime = (timestamp: number) => {
+    if (!Number.isFinite(timestamp)) return;
+    const dateValue = dayKey(timestamp);
+    ensureYear(timestamp).bucket.activeDays.add(dateValue);
+  };
   const weekdayCounts = Array.from({ length: 7 }, (_, index) => ({
     label: new Intl.DateTimeFormat('en', { weekday: 'short', timeZone: 'UTC' }).format(Date.UTC(2024, 0, 7 + index)),
     count: 0,
@@ -117,6 +172,7 @@ export function deriveTimelineStats(
     const date = new Date(timestamp);
     const dateValue = dayKey(timestamp);
     const bucket = ensureBucket(timestamp);
+    addYearTime(timestamp);
     activeDates.add(dateValue);
     dateCounts.set(dateValue, (dateCounts.get(dateValue) ?? 0) + count);
     bucketDays.get(bucket.key)?.add(dateValue);
@@ -127,6 +183,7 @@ export function deriveTimelineStats(
   for (const point of playback) {
     const bucket = ensureBucket(point.time);
     bucket.movementPoints += 1;
+    ensureYear(point.time).bucket.movementPoints += 1;
     addTime(point.time);
   }
 
@@ -140,6 +197,7 @@ export function deriveTimelineStats(
     modeDistances.set(route.properties.mode, (modeDistances.get(route.properties.mode) ?? 0) + routeDistance);
     const routeTime = route.properties.start + (route.properties.end - route.properties.start) / 2;
     ensureBucket(routeTime).distanceMeters += routeDistance;
+    ensureYear(routeTime).bucket.distanceMeters += routeDistance;
     addTime(route.properties.start);
     if (route.properties.end !== route.properties.start) addTime(route.properties.end);
   }
@@ -150,7 +208,27 @@ export function deriveTimelineStats(
     dwellMinutes += duration;
     const bucket = ensureBucket(visit.properties.start);
     bucket.visits += 1;
+    const yearBucket = ensureYear(visit.properties.start).bucket;
+    yearBucket.visits += 1;
+    yearBucket.dwellMinutes += duration;
     addTime(visit.properties.start);
+  }
+
+  for (const visit of visits) {
+    addCountry(
+      visit.geometry.coordinates[1],
+      visit.geometry.coordinates[0],
+      visit.properties.durationMinutes ?? Math.max(1, (visit.properties.end - visit.properties.start) / 60000),
+      0,
+      1,
+    );
+  }
+  for (const sample of timeline.heatSamples) {
+    if (!selected.has(sample.mode ?? 'other')) continue;
+    const sampleIsVisit = visitSampleKeys.has(locationKey(sample.lat, sample.lng, sample.start, sample.end));
+    if (sampleIsVisit) continue;
+    if (sample.movementWeight <= 0 && sample.dwellWeight <= 0) continue;
+    addCountry(sample.lat, sample.lng, sample.dwellWeight, sample.movementWeight, 0);
   }
 
   for (const bucket of buckets.values()) bucket.activeDays = bucketDays.get(bucket.key)?.size ?? 0;
@@ -162,6 +240,14 @@ export function deriveTimelineStats(
     visits: 0,
     movementPoints: 0,
   });
+
+  const totalCountryMinutes = [...countryMap.values()].reduce((total, country) => total + country.minutes, 0);
+  const countryBreakdown = [...countryMap.entries()]
+    .sort((a, b) => b[1].minutes - a[1].minutes || b[1].movementPoints - a[1].movementPoints)
+    .map(([country, values]) => ({ country, ...values, share: totalCountryMinutes > 0 ? values.minutes / totalCountryMinutes : 0 }));
+  const yearBreakdown = [...yearMap.entries()]
+    .sort(([yearA], [yearB]) => yearA.localeCompare(yearB))
+    .map(([year, values]) => ({ year, activeDays: values.activeDays.size, distanceMeters: values.distanceMeters, visits: values.visits, dwellMinutes: values.dwellMinutes, movementPoints: values.movementPoints }));
 
   const modeBreakdown = [...modeDistances.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -197,5 +283,7 @@ export function deriveTimelineStats(
     hourlyCounts,
     trendGranularity,
     trend,
+    countryBreakdown,
+    yearBreakdown,
   };
 }

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { countryForPoint } from './country';
 import { deriveTimelineStats } from './stats';
 import { createDemoTimeline, filterTimelineByDateRange, normalizeTimeline } from './timeline';
 
@@ -87,6 +88,11 @@ describe('timeline normalizer', () => {
     expect(stats.peakHour).toBeDefined();
     expect(walkingStats.topMode).toBe('walk');
     expect(walkingStats.distanceMeters).toBeLessThan(stats.distanceMeters);
+  });
+
+  it('matches representative coordinates to offline country boundaries', () => {
+    expect(countryForPoint(48.2082, 16.3738)).toBe('Austria');
+    expect(countryForPoint(48.8566, 2.3522)).toBe('France');
   });
 
   it.skipIf(!existsSync(resolve(process.cwd(), '..', 'Timeline.json')))('smoke-tests the included export', () => {
