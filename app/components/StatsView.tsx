@@ -153,7 +153,6 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
       <section className="stats-chart-section" aria-labelledby="activity-trend-title">
         <div className="stats-section-heading">
           <div>
-            <span className="section-kicker">OVER TIME</span>
             <h3 id="activity-trend-title">Your rhythm, at a glance</h3>
             <p>{stats.trendGranularity === 'year' ? 'Yearly pattern across the selected range' : 'Monthly pattern across the selected range'}</p>
           </div>
@@ -187,7 +186,7 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
 
       <div className="stats-detail-grid">
         <section className="stats-detail-section" aria-labelledby="mode-breakdown-title">
-          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">HOW YOU MOVE</span><h3 id="mode-breakdown-title">Distance by mode</h3></div></div>
+          <div className="stats-section-heading compact-heading"><div><h3 id="mode-breakdown-title">Distance by mode</h3></div></div>
           <div className="mode-stat-list">
             {stats.modeBreakdown.length > 0 ? stats.modeBreakdown.map((entry) => (
               <div className="mode-stat-row" key={entry.mode}>
@@ -199,7 +198,7 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
         </section>
 
         <section className="stats-detail-section" aria-labelledby="weekly-rhythm-title">
-          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">WHEN YOU MOVE</span><h3 id="weekly-rhythm-title">Weekly rhythm</h3></div><span className="detail-note">Peak: {busiestWeekday?.label ?? '--'}</span></div>
+          <div className="stats-section-heading compact-heading"><div><h3 id="weekly-rhythm-title">Weekly rhythm</h3></div><span className="detail-note">Peak: {busiestWeekday?.label ?? '--'}</span></div>
           <div className="weekday-chart" role="img" aria-label="Activity by day of week">
             {stats.weekdayCounts.map((entry) => <div className="weekday-column" key={entry.label}><div className="weekday-bar-track"><span style={{ height: `${Math.max(entry.count > 0 ? 8 : 2, entry.count / maxWeekday * 100)}%` }} /></div><strong>{entry.label.slice(0, 1)}</strong><small>{formatCount(entry.count)}</small></div>)}
           </div>
@@ -208,7 +207,7 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
 
       <div className="stats-detail-grid country-year-grid">
         <section className="stats-detail-section" aria-labelledby="country-breakdown-title">
-          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">WHERE YOU WERE</span><h3 id="country-breakdown-title">Time by country</h3></div><span className="detail-note">Local estimate</span></div>
+          <div className="stats-section-heading compact-heading"><div><h3 id="country-breakdown-title">Time by country</h3></div><span className="detail-note">Local estimate</span></div>
           <div className="country-stat-list">
             {stats.countryBreakdown.length > 0 ? stats.countryBreakdown.slice(0, 8).map((entry, index) => {
               const maxMinutes = Math.max(1, stats.countryBreakdown[0]?.minutes ?? 0);
@@ -218,7 +217,7 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
         </section>
 
         <section className="stats-detail-section" aria-labelledby="year-breakdown-title">
-          <div className="stats-section-heading compact-heading"><div><span className="section-kicker">THE YEARS</span><h3 id="year-breakdown-title">Year by year</h3></div><span className="detail-note">Selected range</span></div>
+          <div className="stats-section-heading compact-heading"><div><h3 id="year-breakdown-title">Year by year</h3></div><span className="detail-note">Selected range</span></div>
           <div className="year-stat-table" role="table" aria-label="Year by year timeline statistics">
             <div className="year-stat-row year-stat-header" role="row"><span>YEAR</span><span>DAYS</span><span>DISTANCE</span><span>PLACES</span><span>TIME AT PLACES</span></div>
             {stats.yearBreakdown.length > 0 ? stats.yearBreakdown.map((entry) => <div className="year-stat-row" role="row" key={entry.year}><strong>{entry.year}</strong><span>{formatCount(entry.activeDays)}</span><span>{formatDistance(entry.distanceMeters)}</span><span>{formatCount(entry.visits)}</span><span>{formatDuration(entry.dwellMinutes)}</span></div>) : <p className="empty-stats">No year-level activity in this range.</p>}
@@ -227,7 +226,7 @@ export default function StatsView({ timeline, selectedModes, showVisits }: Stats
       </div>
 
       <section className="signature-section" aria-labelledby="signature-title">
-        <div className="stats-section-heading compact-heading"><div><span className="section-kicker">THE SMALL DETAILS</span><h3 id="signature-title">Your timeline signature</h3></div></div>
+        <div className="stats-section-heading compact-heading"><div><h3 id="signature-title">Your timeline signature</h3></div></div>
         <div className="signature-grid">
           <div><span>BUSIEST DATE</span><strong>{formatDate(stats.busiestDate ? Date.parse(`${stats.busiestDate}T00:00:00.000Z`) : undefined)}</strong><small>{formatCount(stats.busiestDateCount)} moments logged</small></div>
           <div><span>PEAK HOUR</span><strong>{formatHour(stats.peakHour)}</strong><small>{formatCount(stats.peakHourCount)} moments in the busiest hour</small></div>
