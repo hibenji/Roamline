@@ -457,7 +457,11 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
           minLat = Math.min(minLat, lat);
           maxLat = Math.max(maxLat, lat);
         }
-        map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: { top: 140, bottom: 180, left: 320, right: 80 }, maxZoom: 4.2, duration: 1200 });
+        const isMobile = window.matchMedia('(max-width: 760px)').matches;
+        const padding = isMobile
+          ? { top: 84, bottom: 410, left: 24, right: 24 }
+          : { top: 140, bottom: 180, left: 320, right: 80 };
+        map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding, maxZoom: 4.2, duration: 1200 });
         initialFitRef.current = true;
       }
     }
