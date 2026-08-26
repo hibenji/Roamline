@@ -69,7 +69,7 @@ export default function Home() {
   const [selectedModes, setSelectedModes] = useState<ModeKey[]>(MODES.map((mode) => mode.key));
   const [showVisits, setShowVisits] = useState(true);
   const [autoRotate, setAutoRotate] = useState(false);
-  const [fromDate, setFromDate] = useState('2024-01-01');
+  const [fromDate, setFromDate] = useState('2022-01-01');
   const [toDate, setToDate] = useState('');
   const [playbackProgress, setPlaybackProgress] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -160,7 +160,7 @@ export default function Home() {
     setLoadState('demo');
     setLoadLabel('Synthetic demo · 4 days');
     setLoadMessage('');
-    setFromDate('2024-01-01');
+    setFromDate('2022-01-01');
     setToDate('');
     setProgress(0);
     setViewMode('all');
@@ -342,7 +342,7 @@ export default function Home() {
               <label>From<input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></label>
               <label>To<input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} /></label>
             </div>
-            <div className="range-actions"><button type="button" onClick={() => { setFromDate(''); setToDate(''); }}>Full timeline</button><span>Default: since 2024</span></div>
+            <div className="range-actions"><button type="button" onClick={() => { setFromDate(''); setToDate(''); }}>Full timeline</button><span>Default: since 2022</span></div>
             {rangeError && <p className="range-message" role="alert">End date must be on or after the start date.</p>}
             {!rangeError && !rangeHasData && <p className="range-message" role="status">No locations found in this range.</p>}
           </div>
