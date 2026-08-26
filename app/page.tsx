@@ -5,6 +5,7 @@ import GlobeMap, { pointAtProgress, type GlobeViewMode, type HeatViewMode } from
 import TimelineWorker from './timeline.worker?worker';
 import {
   createDemoTimeline,
+  filterTimelineByDateRange,
   type ModeKey,
   type NormalizedTimeline,
   type TimelineWorkerMessage,
@@ -55,6 +56,12 @@ function isJsonFile(file: File) {
   return file.type === 'application/json' || file.name.toLowerCase().endsWith('.json');
 }
 
+function formatRangeDate(value: string, fallback: string) {
+  if (!value) return fallback;
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
+  return Number.isFinite(timestamp) ? formatDate(timestamp) : fallback;
+}
+
 export default function Home() {
   const [timeline, setTimeline] = useState<NormalizedTimeline>(() => createDemoTimeline());
   const [viewMode, setViewMode] = useState<GlobeViewMode>('all');
@@ -62,6 +69,8 @@ export default function Home() {
   const [selectedModes, setSelectedModes] = useState<ModeKey[]>(MODES.map((mode) => mode.key));
   const [showVisits, setShowVisits] = useState(true);
   const [autoRotate, setAutoRotate] = useState(false);
+  const [fromDate, setFromDate] = useState('2024-01-01');
+  const [toDate, setToDate] = useState('');
   const [playbackProgress, setPlaybackProgress] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(4);
@@ -120,8 +129,15 @@ export default function Home() {
     return () => cancelAnimationFrame(frame);
   }, [isPlaying, speed]);
 
-  const currentPoint = useMemo(() => pointAtProgress(timeline, playbackProgress), [timeline, playbackProgress]);
-  const currentDate = currentPoint?.time ?? timeline.coverage.end;
+  const rangeError = Boolean(fromDate && toDate && fromDate > toDate);
+  const visibleTimeline = useMemo(
+    () => rangeError ? timeline : filterTimelineByDateRange(timeline, fromDate || undefined, toDate || undefined),
+    [timeline, fromDate, toDate, rangeError],
+  );
+  const currentPoint = useMemo(() => pointAtProgress(visibleTimeline, playbackProgress), [visibleTimeline, playbackProgress]);
+  const currentDate = currentPoint?.time ?? visibleTimeline.coverage.end;
+  const rangeLabel = `${formatRangeDate(fromDate, 'Beginning')} → ${formatRangeDate(toDate, 'Latest')}`;
+  const rangeHasData = visibleTimeline.playback.length > 0 || visibleTimeline.routes.features.length > 0 || visibleTimeline.visits.features.length > 0;
   const allModesSelected = selectedModes.length === MODES.length;
 
   function chooseView(nextMode: GlobeViewMode) {
@@ -144,6 +160,8 @@ export default function Home() {
     setLoadState('demo');
     setLoadLabel('Synthetic demo · 4 days');
     setLoadMessage('');
+    setFromDate('2024-01-01');
+    setToDate('');
     setProgress(0);
     setViewMode('all');
     progressRef.current = 1;
@@ -238,7 +256,7 @@ export default function Home() {
       <div className="atmosphere atmosphere-two" />
 
       <GlobeMap
-        timeline={timeline}
+        timeline={visibleTimeline}
         viewMode={viewMode}
         heatMode={heatMode}
         selectedModes={selectedModes}
@@ -300,7 +318,7 @@ export default function Home() {
             <div className="eyebrow">VIEW LAYERS</div>
             <p>{modeDescription}</p>
           </div>
-          <span className="layer-count">{formatCount(timeline.stats.routePointCount)} pts</span>
+          <span className="layer-count">{formatCount(visibleTimeline.stats.routePointCount)} pts</span>
         </div>
         <div className="view-tabs" role="tablist" aria-label="Globe view">
           {([
@@ -313,6 +331,22 @@ export default function Home() {
             </button>
           ))}
         </div>
+
+        <details className="range-details">
+          <summary>
+            <span className="range-summary-copy"><span className="range-summary-icon" aria-hidden="true">◷</span><span><strong>TIME RANGE</strong><small>{rangeLabel}</small></span></span>
+            <span className="range-chevron" aria-hidden="true">⌄</span>
+          </summary>
+          <div className="range-popover">
+            <div className="range-fields">
+              <label>From<input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></label>
+              <label>To<input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} /></label>
+            </div>
+            <div className="range-actions"><button type="button" onClick={() => { setFromDate(''); setToDate(''); }}>Full timeline</button><span>Default: since 2024</span></div>
+            {rangeError && <p className="range-message" role="alert">End date must be on or after the start date.</p>}
+            {!rangeError && !rangeHasData && <p className="range-message" role="status">No locations found in this range.</p>}
+          </div>
+        </details>
 
         {viewMode === 'heatmap' && (
           <div className="heat-switch" role="group" aria-label="Heatmap metric">
@@ -337,11 +371,11 @@ export default function Home() {
       </section>
 
       <section className="stats-panel" aria-label="Timeline summary">
-        <div className="stats-intro"><span className="eyebrow">THE LONG VIEW</span><strong>{formatDate(timeline.coverage.start)} <span>→</span> {formatDate(timeline.coverage.end)}</strong></div>
-        <div className="stat-item"><span>ACTIVE DAYS</span><strong>{formatCount(timeline.stats.activeDays)}</strong></div>
-        <div className="stat-item"><span>DISTANCE</span><strong>{formatDistance(timeline.stats.distanceMeters)}</strong></div>
-        <div className="stat-item"><span>VISITS</span><strong>{formatCount(timeline.stats.visitCount)}</strong></div>
-        <div className="stat-item hotspots"><span>HOT ZONES</span><div className="hotspot-chips">{timeline.stats.hotspots.slice(0, 3).map((hotspot, index) => <span key={`${hotspot.lat}-${hotspot.lng}-${index}`}>{index + 1} · {hotspot.lat.toFixed(2)}°, {hotspot.lng.toFixed(2)}°</span>)}</div></div>
+        <div className="stats-intro"><span className="eyebrow">THE LONG VIEW</span><strong>{formatDate(visibleTimeline.coverage.start)} <span>→</span> {formatDate(visibleTimeline.coverage.end)}</strong></div>
+        <div className="stat-item"><span>ACTIVE DAYS</span><strong>{formatCount(visibleTimeline.stats.activeDays)}</strong></div>
+        <div className="stat-item"><span>DISTANCE</span><strong>{formatDistance(visibleTimeline.stats.distanceMeters)}</strong></div>
+        <div className="stat-item"><span>VISITS</span><strong>{formatCount(visibleTimeline.stats.visitCount)}</strong></div>
+        <div className="stat-item hotspots"><span>HOT ZONES</span><div className="hotspot-chips">{visibleTimeline.stats.hotspots.slice(0, 3).map((hotspot, index) => <span key={`${hotspot.lat}-${hotspot.lng}-${index}`}>{index + 1} · {hotspot.lat.toFixed(2)}°, {hotspot.lng.toFixed(2)}°</span>)}</div></div>
       </section>
 
       <section className={`timeline-dock ${viewMode === 'replay' ? 'is-visible' : ''}`} aria-label="Timeline playback">
@@ -356,9 +390,9 @@ export default function Home() {
           <button className="play-button" type="button" onClick={() => { if (playbackProgress >= 1) { progressRef.current = 0; setPlaybackProgress(0); } setViewMode('replay'); setIsPlaying((value) => !value); }} aria-label={isPlaying ? 'Pause replay' : 'Play replay'}>{isPlaying ? 'Ⅱ' : '▶'}</button>
           <div className="range-wrap">
             <input aria-label="Timeline position" type="range" min="0" max="1000" value={Math.round(playbackProgress * 1000)} onChange={(event) => { const next = Number(event.target.value) / 1000; progressRef.current = next; setPlaybackProgress(next); setViewMode('replay'); setIsPlaying(false); }} />
-            <div className="range-labels"><span>{formatDate(timeline.coverage.start, false)}</span><span>{formatDate(timeline.coverage.end, false)}</span></div>
+            <div className="range-labels"><span>{formatDate(visibleTimeline.coverage.start, false)}</span><span>{formatDate(visibleTimeline.coverage.end, false)}</span></div>
           </div>
-          <span className="route-count">{formatCount(timeline.playback.length)} moments</span>
+          <span className="route-count">{formatCount(visibleTimeline.playback.length)} moments</span>
         </div>
       </section>
 

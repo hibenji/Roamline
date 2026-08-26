@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createDemoTimeline, normalizeTimeline } from './timeline';
+import { createDemoTimeline, filterTimelineByDateRange, normalizeTimeline } from './timeline';
 
 describe('timeline normalizer', () => {
   it('normalizes semantic segments, activities, and visits', () => {
@@ -58,6 +58,19 @@ describe('timeline normalizer', () => {
     expect(demo.routes.features.length).toBeGreaterThan(1);
     expect(demo.playback.length).toBeGreaterThan(1);
     expect(demo.stats.visitCount).toBe(3);
+  });
+
+  it('filters routes, visits, heat samples, playback, and stats by an inclusive date range', () => {
+    const demo = createDemoTimeline();
+    const filtered = filterTimelineByDateRange(demo, '2024-04-14', '2024-04-14');
+
+    expect(filtered.playback.every((point) => point.time >= Date.parse('2024-04-14T00:00:00Z') && point.time <= Date.parse('2024-04-14T23:59:59.999Z'))).toBe(true);
+    expect(filtered.routes.features).toHaveLength(3);
+    expect(filtered.visits.features).toHaveLength(1);
+    expect(filtered.stats.visitCount).toBe(1);
+    expect(filtered.heatPoints.features.length).toBeGreaterThan(0);
+    expect(filtered.coverage.start).toBeGreaterThanOrEqual(Date.parse('2024-04-14T00:00:00Z'));
+    expect(filtered.coverage.end).toBeLessThanOrEqual(Date.parse('2024-04-14T23:59:59.999Z'));
   });
 
   it.skipIf(!existsSync(resolve(process.cwd(), '..', 'Timeline.json')))('smoke-tests the included export', () => {

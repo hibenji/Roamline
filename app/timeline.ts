@@ -35,6 +35,16 @@ export type HeatProperties = {
   mode?: ModeKey;
 };
 
+export type HeatSample = {
+  lat: number;
+  lng: number;
+  start: number;
+  end: number;
+  movementWeight: number;
+  dwellWeight: number;
+  mode?: ModeKey;
+};
+
 export type LineFeature = {
   type: 'Feature';
   geometry: { type: 'LineString'; coordinates: [number, number][] };
@@ -57,6 +67,7 @@ export type NormalizedTimeline = {
   routes: TimelineCollection<LineFeature>;
   visits: TimelineCollection<PointFeature<VisitProperties>>;
   heatPoints: TimelineCollection<PointFeature<HeatProperties>>;
+  heatSamples: HeatSample[];
   playback: Point[];
   stats: {
     activeDays: number;
@@ -90,6 +101,8 @@ const MAX_ROUTE_POINTS = 52000;
 const MAX_PLAYBACK_POINTS = 14000;
 const MAX_VISITS = 2600;
 const MAX_HEAT_CELLS = 14000;
+const MAX_HEAT_ROUTE_SAMPLES = 28000;
+const MAX_HEAT_SIGNAL_SAMPLES = 12000;
 const GRID_SIZE = 0.025;
 
 const MODE_ALIASES: Record<string, ModeKey> = {
@@ -243,6 +256,56 @@ function getSegmentMode(
 type RawPath = { points: Point[]; start?: number; end?: number; mode?: ModeKey; distanceMeters?: number };
 type RawVisit = { point: Point; start: number; end: number };
 
+type HeatCell = { lat: number; lng: number; movement: number; dwell: number; mode: ModeKey };
+
+function aggregateHeatData(samples: HeatSample[], range?: { start: number; end: number }) {
+  const grid = new Map<string, HeatCell>();
+  const addHeat = (sample: HeatSample, movement: number, dwell: number) => {
+    const latCell = Math.round(sample.lat / GRID_SIZE);
+    const lngCell = Math.round(sample.lng / GRID_SIZE);
+    const mode = sample.mode ?? 'other';
+    const key = `${latCell}:${lngCell}:${mode}`;
+    const existing = grid.get(key) ?? { lat: latCell * GRID_SIZE, lng: lngCell * GRID_SIZE, movement: 0, dwell: 0, mode };
+    existing.movement += movement;
+    existing.dwell += dwell;
+    grid.set(key, existing);
+  };
+
+  for (const sample of samples) {
+    const sampleStart = Math.min(sample.start, sample.end);
+    const sampleEnd = Math.max(sample.start, sample.end);
+    const rangeStart = range?.start ?? sampleStart;
+    const rangeEnd = range?.end ?? sampleEnd;
+    if (sampleEnd < rangeStart || sampleStart > rangeEnd) continue;
+
+    const overlapStart = Math.max(sampleStart, rangeStart);
+    const overlapEnd = Math.min(sampleEnd, rangeEnd);
+    const sampleDuration = sampleEnd - sampleStart;
+    const overlapRatio = sampleDuration > 0 ? Math.max(0, Math.min(1, (overlapEnd - overlapStart) / sampleDuration)) : 1;
+    addHeat(sample, sample.movementWeight * overlapRatio, sample.dwellWeight * overlapRatio);
+  }
+
+  const rawHeat = [...grid.values()]
+    .sort((a, b) => b.movement + b.dwell - (a.movement + a.dwell))
+    .slice(0, MAX_HEAT_CELLS);
+  const maxMovement = Math.max(1, ...rawHeat.map((cell) => cell.movement));
+  const maxDwell = Math.max(1, ...rawHeat.map((cell) => cell.dwell));
+  const heatPoints: PointFeature<HeatProperties>[] = rawHeat.map((cell) => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [cell.lng, cell.lat] },
+    properties: {
+      movementWeight: Math.min(1, Math.log1p(cell.movement) / Math.log1p(maxMovement)),
+      dwellWeight: Math.min(1, Math.log1p(cell.dwell) / Math.log1p(maxDwell)),
+      mode: cell.mode,
+    },
+  }));
+
+  return {
+    heatPoints,
+    hotspots: rawHeat.slice(0, 4).map((cell) => ({ lat: cell.lat, lng: cell.lng, dwell: cell.dwell, movement: cell.movement })),
+  };
+}
+
 function extractLegacy(root: Record<string, any>, paths: RawPath[], visits: RawVisit[], rawPositions: Point[]) {
   for (const item of asArray(root.locations)) {
     const record = asRecord(item);
@@ -375,36 +438,36 @@ export function normalizeTimeline(payload: unknown): NormalizedTimeline {
     });
   }
 
-  const grid = new Map<string, { lat: number; lng: number; movement: number; dwell: number; mode: ModeKey }>();
-  const addHeat = (point: Point, movement: number, dwell: number, mode = point.mode ?? 'other') => {
-    const latCell = Math.round(point.lat / GRID_SIZE);
-    const lngCell = Math.round(point.lng / GRID_SIZE);
-    const key = `${latCell}:${lngCell}:${mode}`;
-    const existing = grid.get(key) ?? { lat: latCell * GRID_SIZE, lng: lngCell * GRID_SIZE, movement: 0, dwell: 0, mode };
-    existing.movement += movement;
-    existing.dwell += dwell;
-    grid.set(key, existing);
-  };
-
-  for (const point of allPathPoints) addHeat(point, 1, 0, point.mode);
-  for (let index = 0; index < rawPositions.length; index += 4) addHeat(rawPositions[index], 0.05, 0.25, rawPositions[index].mode);
-  for (const visit of visits) {
-    const dwellMinutes = Math.max(1, (visit.end - visit.start) / 60000);
-    addHeat(visit.point, 0.25, dwellMinutes, 'other');
-  }
-
-  const rawHeat = [...grid.values()].sort((a, b) => b.movement + b.dwell - (a.movement + a.dwell)).slice(0, MAX_HEAT_CELLS);
-  const maxMovement = Math.max(1, ...rawHeat.map((cell) => cell.movement));
-  const maxDwell = Math.max(1, ...rawHeat.map((cell) => cell.dwell));
-  const heatPoints: PointFeature<HeatProperties>[] = rawHeat.map((cell) => ({
-    type: 'Feature',
-    geometry: { type: 'Point', coordinates: [cell.lng, cell.lat] },
-    properties: {
-      movementWeight: Math.min(1, Math.log1p(cell.movement) / Math.log1p(maxMovement)),
-      dwellWeight: Math.min(1, Math.log1p(cell.dwell) / Math.log1p(maxDwell)),
-      mode: cell.mode,
-    },
-  }));
+  const heatSamples: HeatSample[] = [
+    ...decimate(allPathPoints, MAX_HEAT_ROUTE_SAMPLES).map((point) => ({
+      lat: point.lat,
+      lng: point.lng,
+      start: point.time,
+      end: point.time,
+      movementWeight: 1,
+      dwellWeight: 0,
+      mode: point.mode,
+    })),
+    ...decimate(rawPositions.filter((_, index) => index % 4 === 0), MAX_HEAT_SIGNAL_SAMPLES).map((point) => ({
+      lat: point.lat,
+      lng: point.lng,
+      start: point.time,
+      end: point.time,
+      movementWeight: 0.05,
+      dwellWeight: 0.25,
+      mode: point.mode,
+    })),
+    ...visits.map((visit) => ({
+      lat: visit.point.lat,
+      lng: visit.point.lng,
+      start: visit.start,
+      end: visit.end,
+      movementWeight: 0.25,
+      dwellWeight: Math.max(1, (visit.end - visit.start) / 60000),
+      mode: 'other' as ModeKey,
+    })),
+  ].sort((a, b) => a.start - b.start);
+  const { heatPoints, hotspots } = aggregateHeatData(heatSamples);
 
   const allTimes = [
     ...allPathPoints.map((point) => point.time),
@@ -416,8 +479,6 @@ export function normalizeTimeline(payload: unknown): NormalizedTimeline {
   const activeDays = new Set(allTimes.map((time) => new Date(time).toISOString().slice(0, 10))).size;
   const activityDistance = activities.reduce((total, activity) => total + (activity.distanceMeters ?? 0), 0);
   const fallbackDistance = allPathPoints.slice(1).reduce((total, point, index) => total + distanceBetween(allPathPoints[index], point), 0);
-  const hotspots = rawHeat.slice(0, 4).map((cell) => ({ lat: cell.lat, lng: cell.lng, dwell: cell.dwell, movement: cell.movement }));
-
   return {
     coverage: { start: Number.isFinite(start) ? start : Date.now(), end: Number.isFinite(end) ? end : Date.now() },
     routes: { type: 'FeatureCollection', features: renderRoutes },
@@ -430,12 +491,83 @@ export function normalizeTimeline(payload: unknown): NormalizedTimeline {
       })),
     },
     heatPoints: { type: 'FeatureCollection', features: heatPoints },
+    heatSamples,
     playback,
     stats: {
       activeDays,
       distanceMeters: activityDistance || fallbackDistance,
       visitCount: visits.length,
       routePointCount: renderPointCount,
+      hotspots,
+    },
+  };
+}
+
+function lineDistance(coordinates: [number, number][]) {
+  return coordinates.slice(1).reduce((total, [lng, lat], index) => {
+    const [previousLng, previousLat] = coordinates[index];
+    return total + distanceBetween(
+      { lat: previousLat, lng: previousLng, time: 0 },
+      { lat, lng, time: 0 },
+    );
+  }, 0);
+}
+
+function dateRangeTimes(fromDate?: string, toDate?: string) {
+  const start = fromDate ? Date.parse(`${fromDate}T00:00:00.000Z`) : undefined;
+  const end = toDate ? Date.parse(`${toDate}T23:59:59.999Z`) : undefined;
+  return {
+    start: Number.isFinite(start) ? start : undefined,
+    end: Number.isFinite(end) ? end : undefined,
+  };
+}
+
+export function filterTimelineByDateRange(timeline: NormalizedTimeline, fromDate?: string, toDate?: string): NormalizedTimeline {
+  const requested = dateRangeTimes(fromDate, toDate);
+  const start = Math.max(timeline.coverage.start, requested.start ?? timeline.coverage.start);
+  const end = Math.min(timeline.coverage.end, requested.end ?? timeline.coverage.end);
+  if (end < start) return timeline;
+
+  const routes = timeline.routes.features.filter((route) => route.properties.end >= start && route.properties.start <= end);
+  const visits = timeline.visits.features
+    .filter((visit) => visit.properties.end >= start && visit.properties.start <= end)
+    .map((visit) => ({
+      ...visit,
+      properties: {
+        ...visit.properties,
+        start: Math.max(start, visit.properties.start),
+        end: Math.min(end, visit.properties.end),
+        durationMinutes: Math.max(1, (Math.min(end, visit.properties.end) - Math.max(start, visit.properties.start)) / 60000),
+      },
+    }));
+  const playback = timeline.playback.filter((point) => point.time >= start && point.time <= end);
+  const heatSamples = timeline.heatSamples.filter((sample) => sample.end >= start && sample.start <= end);
+  const { heatPoints, hotspots } = aggregateHeatData(heatSamples, { start, end });
+  const visibleTimes = [
+    ...routes.flatMap((route) => [Math.max(start, route.properties.start), Math.min(end, route.properties.end)]),
+    ...visits.flatMap((visit) => [visit.properties.start, visit.properties.end]),
+    ...playback.map((point) => point.time),
+  ];
+  const coverageStart = visibleTimes.length > 0 ? Math.min(...visibleTimes) : start;
+  const coverageEnd = visibleTimes.length > 0 ? Math.max(...visibleTimes) : end;
+  const activeDays = new Set(visibleTimes.map((time) => new Date(time).toISOString().slice(0, 10))).size;
+  const routePointCount = routes.reduce((total, route) => total + route.geometry.coordinates.length, 0);
+  const routeDistance = routes.reduce((total, route) => total + (route.properties.distanceMeters ?? lineDistance(route.geometry.coordinates)), 0);
+  const playbackDistance = playback.slice(1).reduce((total, point, index) => total + distanceBetween(playback[index], point), 0);
+
+  return {
+    ...timeline,
+    coverage: { start: coverageStart, end: coverageEnd },
+    routes: { type: 'FeatureCollection', features: routes },
+    visits: { type: 'FeatureCollection', features: visits },
+    heatPoints: { type: 'FeatureCollection', features: heatPoints },
+    heatSamples,
+    playback,
+    stats: {
+      activeDays,
+      distanceMeters: routeDistance || playbackDistance,
+      visitCount: visits.length,
+      routePointCount,
       hotspots,
     },
   };
@@ -473,55 +605,49 @@ export function createDemoTimeline(): NormalizedTimeline {
     feature('transit', [[13.41, 52.51, '2024-04-14T15:00:00Z'], [13.35, 52.5, '2024-04-14T15:35:00Z'], [13.4, 52.52, '2024-04-15T08:00:00Z']]),
   ];
 
-  const heatMap = new Map<string, { lng: number; lat: number; movement: number; dwell: number; mode: ModeKey }>();
-  for (const route of routes) {
-    for (const [lng, lat] of route.geometry.coordinates) {
-      const key = `${Math.round(lat / 0.05)}:${Math.round(lng / 0.05)}:${route.properties.mode}`;
-      const cell = heatMap.get(key) ?? { lng, lat, movement: 0, dwell: 0, mode: route.properties.mode };
-      cell.movement += 0.45;
-      heatMap.set(key, cell);
-    }
-  }
-
   const visits = [
     demoVisit(2.35, 48.86, '2024-04-12T10:30:00Z', '2024-04-12T13:00:00Z'),
     demoVisit(12.49, 41.9, '2024-04-12T16:15:00Z', '2024-04-13T09:00:00Z'),
     demoVisit(13.4, 52.52, '2024-04-14T09:10:00Z', '2024-04-14T14:00:00Z'),
   ];
-  for (const visit of visits) {
-    const [lng, lat] = visit.geometry.coordinates;
-    const key = `${Math.round(lat / 0.05)}:${Math.round(lng / 0.05)}`;
-    const cell = heatMap.get(key) ?? { lng, lat, movement: 0, dwell: 0, mode: 'other' };
-    cell.dwell += visit.properties.durationMinutes ?? 1;
-    heatMap.set(key, cell);
-  }
-
-  const cells = [...heatMap.values()];
-  const maxMovement = Math.max(1, ...cells.map((cell) => cell.movement));
-  const maxDwell = Math.max(1, ...cells.map((cell) => cell.dwell));
   const playback = routes
-    .flatMap((route) => route.geometry.coordinates.map(([lng, lat], index) => ({ lat, lng, time: route.properties.start + index * 3600000, mode: route.properties.mode })))
+    .flatMap((route) => route.geometry.coordinates.map(([lng, lat], index) => ({
+      lat,
+      lng,
+      time: route.properties.start + ((route.properties.end - route.properties.start) * index) / Math.max(1, route.geometry.coordinates.length - 1),
+      mode: route.properties.mode,
+    })))
     .sort((a, b) => a.time - b.time);
+  const heatSamples: HeatSample[] = [
+    ...routes.flatMap((route) => route.geometry.coordinates.map(([lng, lat], index) => {
+      const time = route.properties.start + ((route.properties.end - route.properties.start) * index) / Math.max(1, route.geometry.coordinates.length - 1);
+      return { lat, lng, start: time, end: time, movementWeight: 0.45, dwellWeight: 0, mode: route.properties.mode };
+    })),
+    ...visits.map((visit) => ({
+      lat: visit.geometry.coordinates[1],
+      lng: visit.geometry.coordinates[0],
+      start: visit.properties.start,
+      end: visit.properties.end,
+      movementWeight: 0.25,
+      dwellWeight: visit.properties.durationMinutes ?? 1,
+      mode: 'other' as ModeKey,
+    })),
+  ];
+  const { heatPoints, hotspots } = aggregateHeatData(heatSamples);
 
   return {
     coverage: { start: Date.parse('2024-04-12T08:00:00Z'), end: Date.parse('2024-04-15T08:00:00Z') },
     routes: { type: 'FeatureCollection', features: routes },
     visits: { type: 'FeatureCollection', features: visits },
-    heatPoints: {
-      type: 'FeatureCollection',
-      features: cells.map((cell) => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [cell.lng, cell.lat] },
-        properties: { movementWeight: cell.movement / maxMovement, dwellWeight: cell.dwell / maxDwell, mode: cell.mode },
-      })),
-    },
+    heatPoints: { type: 'FeatureCollection', features: heatPoints },
+    heatSamples,
     playback,
     stats: {
       activeDays: 4,
       distanceMeters: 2580000,
       visitCount: visits.length,
       routePointCount: routes.reduce((total, route) => total + route.geometry.coordinates.length, 0),
-      hotspots: cells.slice(0, 4).map((cell) => ({ lat: cell.lat, lng: cell.lng, dwell: cell.dwell, movement: cell.movement })),
+      hotspots,
     },
   };
 }
