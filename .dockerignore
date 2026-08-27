@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+.next
+.vinext
+.wrangler
+coverage
+dist
+*.tar.gz
+*.tsbuildinfo
+.env*
+!.env.example

@@ -44,6 +44,21 @@ VITE_MAPBOX_ACCESS_TOKEN=your_public_mapbox_token
 
 The token is only used by the browser for map tiles. Never put private credentials or a personal timeline export in the repository.
 
+## Run with Docker
+
+Build and run the production image:
+
+```bash
+docker build -t roamline .
+docker run --publish 3000:3000 roamline
+```
+
+The image uses the CARTO basemap fallback by default. To include an optional public Mapbox token at build time:
+
+```bash
+docker build --build-arg VITE_MAPBOX_ACCESS_TOKEN=your_public_mapbox_token -t roamline .
+```
+
 ## Quality checks
 
 ```bash

@@ -397,7 +397,7 @@
   padding: 0 10px;
   border: 0;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--mode-color) 17%, #111827);
+  background: transparent;
   color: color-mix(in srgb, var(--mode-color) 84%, #f7f3eb);
   font-size: 9px;
   transition:
