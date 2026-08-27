@@ -1004,8 +1004,15 @@ button {
   transform: translateX(12px);
 }
 
-.roamline-shell.is-stats .stats-panel,
-.roamline-shell.is-stats .timeline-dock {
+.roamline-shell.is-stats .stats-page {
+  z-index: 3;
+}
+
+.roamline-shell.is-stats .topbar {
+  z-index: 6;
+}
+
+.roamline-shell.is-stats .stats-panel {
   display: none;
 }
 
@@ -1659,7 +1666,7 @@ button {
   backdrop-filter: blur(20px);
   opacity: 0.92;
   transform: translateX(50%);
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  transition: border-color 180ms ease, background 180ms ease;
 }
 
 .timeline-dock:hover,
@@ -1861,7 +1868,7 @@ input:focus-visible {
     right: 16px;
     bottom: 25px;
     width: auto;
-    padding-bottom: 105px;
+    padding-bottom: var(--timeline-dock-height, env(safe-area-inset-bottom));
   }
 
   .roamline-shell.has-loaded-file .layer-panel {
@@ -1903,7 +1910,7 @@ input:focus-visible {
 
   .stats-page {
     inset: 0;
-    z-index: 2;
+    z-index: 3;
     padding: calc(182px + env(safe-area-inset-top)) 17px calc(30px + env(safe-area-inset-bottom));
     border: 0;
     border-radius: 0;

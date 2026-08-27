@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import GlobeMap, { pointAtProgress, type GlobeViewMode, type HeatViewMode } from './components/GlobeMap';
 import StatsView from './components/StatsView';
@@ -35,6 +35,8 @@ const modeColors: Record<ModeKey, string> = {
 
 const motionEase = [0.22, 1, 0.36, 1] as const;
 const panelTransition = { duration: 0.65, ease: motionEase };
+const statsReturnTransition = { duration: 0.58, ease: motionEase };
+const timelineReturnTransition = { ...statsReturnTransition, opacity: { duration: 0.46, ease: 'linear' as const } };
 const layerLayoutTransition = { type: 'spring' as const, stiffness: 260, damping: 30, mass: 0.8 };
 
 function formatDate(timestamp: number, includeYear = true) {
@@ -90,8 +92,15 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [mapReady, setMapReady] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [timelineDockHeight, setTimelineDockHeight] = useState<number | null>(null);
+  const [isReturningFromStats, setIsReturningFromStats] = useState(false);
+  const [restoredLayerPanelSnapshot, setRestoredLayerPanelSnapshot] = useState<{ panelHeight: number; headingHeight: number; settingsHeight: number } | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const layerPanelRef = useRef<HTMLElement | null>(null);
+  const layerHeadingRef = useRef<HTMLDivElement | null>(null);
+  const layerSettingsRef = useRef<HTMLDivElement | null>(null);
+  const timelineDockRef = useRef<HTMLElement | null>(null);
   const progressRef = useRef(playbackProgress);
   const prefersReducedMotionRef = useRef(false);
 
@@ -121,6 +130,19 @@ export default function Home() {
     media.addEventListener?.('change', handleChange);
     return () => media.removeEventListener?.('change', handleChange);
   }, []);
+
+  useLayoutEffect(() => {
+    const dock = timelineDockRef.current;
+    if (!dock) return;
+
+    const updateDockHeight = () => setTimelineDockHeight(dock.getBoundingClientRect().height);
+    updateDockHeight();
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(updateDockHeight);
+    observer.observe(dock);
+    return () => observer.disconnect();
+  }, [isMobileViewport]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -164,11 +186,21 @@ export default function Home() {
     setFromDate(nextFromDate);
     setToDate(nextToDate);
     setRangeFocusActive(true);
+    setIsReturningFromStats(viewMode === 'stats');
     setViewMode('all');
     setIsPlaying(false);
     progressRef.current = 1;
     setPlaybackProgress(1);
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, viewMode]);
+
+  function rememberLayerPanelSize() {
+    if (!isMobileViewport || viewMode === 'stats' || !layerPanelRef.current || !layerHeadingRef.current || !layerSettingsRef.current) return;
+    setRestoredLayerPanelSnapshot({
+      panelHeight: layerPanelRef.current.getBoundingClientRect().height,
+      headingHeight: layerHeadingRef.current.getBoundingClientRect().height,
+      settingsHeight: layerSettingsRef.current.getBoundingClientRect().height,
+    });
+  }
 
   function clearDateRange() {
     setFromDate('');
@@ -187,6 +219,9 @@ export default function Home() {
   }
 
   function chooseView(nextMode: GlobeViewMode) {
+    if (nextMode === 'stats' && viewMode !== 'stats') rememberLayerPanelSize();
+    if (nextMode !== 'stats' && viewMode !== 'stats') setRestoredLayerPanelSnapshot(null);
+    setIsReturningFromStats(viewMode === 'stats' && nextMode !== 'stats');
     setViewMode(nextMode);
     setIsPlaying(false);
     if (nextMode === 'replay' && playbackProgress >= 1) {
@@ -211,6 +246,7 @@ export default function Home() {
     setRangeFocusActive(false);
     setPreviousRange(null);
     setProgress(0);
+    setIsReturningFromStats(viewMode === 'stats');
     setViewMode('all');
     setConnectSequential(false);
     progressRef.current = 1;
@@ -245,6 +281,7 @@ export default function Home() {
         setLoadState('ready');
         setLoadMessage('Loaded locally · nothing was uploaded');
         setProgress(100);
+        setIsReturningFromStats(viewMode === 'stats');
         setViewMode('all');
         setRangeFocusActive(false);
         setPreviousRange(null);
@@ -297,7 +334,7 @@ export default function Home() {
     ? 'Every route, one persistent layer'
     : viewMode === 'replay'
       ? 'Replay the shape of your days'
-    : viewMode === 'stats'
+      : viewMode === 'stats'
       ? 'Patterns across your selected range'
       : heatMode === 'dwell'
         ? 'Brighter means more time spent'
@@ -367,13 +404,25 @@ export default function Home() {
         {loadState !== 'error' && <div className="load-meta"><span className={`state-dot ${loadState}`} /> <span>{loadState === 'demo' ? 'Synthetic demo' : loadState === 'reading' ? loadMessage : loadLabel}</span><span className="local-chip">LOCAL ONLY</span></div>}
       </motion.section>
 
-      <motion.section className="control-panel layer-panel" layout initial={{ opacity: 0, y: 13 }} animate={{ opacity: 1, y: 0 }} transition={{ ...panelTransition, delay: 0.18, layout: layerLayoutTransition }}>
+      <motion.section
+        ref={layerPanelRef}
+        className="control-panel layer-panel"
+        layout
+        initial={{ opacity: 0, y: 13 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...panelTransition, delay: isReturningFromStats ? 0 : 0.18, layout: isReturningFromStats ? statsReturnTransition : layerLayoutTransition }}
+        style={{
+          '--timeline-dock-height': timelineDockHeight === null ? undefined : `${timelineDockHeight}px`,
+          height: !isMobileStats && restoredLayerPanelSnapshot !== null ? restoredLayerPanelSnapshot.panelHeight : undefined,
+        } as CSSProperties}
+      >
         <motion.div
+          ref={layerHeadingRef}
           className="panel-heading"
           aria-hidden={isMobileStats}
           initial={false}
-          animate={isMobileStats ? { height: 0, opacity: 0, y: -10 } : { height: 'auto', opacity: 1, y: 0 }}
-          transition={{ height: panelTransition, opacity: { duration: 0.28 }, y: panelTransition }}
+          animate={isMobileStats ? { height: 0, opacity: 0, y: -10 } : { height: restoredLayerPanelSnapshot?.headingHeight ?? 'auto', opacity: 1, y: 0 }}
+          transition={isReturningFromStats ? statsReturnTransition : { height: panelTransition, opacity: { duration: 0.28 }, y: panelTransition }}
           style={{ overflow: 'hidden' }}
         >
           <div>
@@ -382,7 +431,7 @@ export default function Home() {
           </div>
           <span className="layer-count">{formatCount(visibleTimeline.stats.routePointCount)} pts</span>
         </motion.div>
-        <motion.div className="view-switcher-box" layout="position">
+        <motion.div className="view-switcher-box" layout="position" transition={{ layout: isReturningFromStats ? statsReturnTransition : layerLayoutTransition }}>
           <div className="view-tabs" role="tablist" aria-label="Globe view">
             {([
               ['all', 'All activity', '◉'],
@@ -407,12 +456,13 @@ export default function Home() {
         </motion.div>
 
         <motion.div
+          ref={layerSettingsRef}
           className="layer-settings"
           aria-hidden={isMobileStats}
           inert={isMobileStats || undefined}
           initial={false}
-          animate={isMobileStats ? { height: 0, opacity: 0, y: -10 } : { height: 'auto', opacity: 1, y: 0 }}
-          transition={{ height: panelTransition, opacity: { duration: 0.28 }, y: panelTransition }}
+          animate={isMobileStats ? { height: 0, opacity: 0, y: -10 } : { height: restoredLayerPanelSnapshot?.settingsHeight ?? 'auto', opacity: 1, y: 0 }}
+          transition={isReturningFromStats ? statsReturnTransition : { height: panelTransition, opacity: { duration: 0.28 }, y: panelTransition }}
           style={{ overflow: isMobileStats ? 'hidden' : 'visible', pointerEvents: isMobileStats ? 'none' : 'auto' }}
         >
           <details className="range-details">
@@ -477,7 +527,20 @@ export default function Home() {
         <div className="stat-item hotspots"><span>HOT ZONES</span><div className="hotspot-chips">{visibleTimeline.stats.hotspots.slice(0, 3).map((hotspot, index) => <span key={`${hotspot.lat}-${hotspot.lng}-${index}`}>{index + 1} · {hotspot.lat.toFixed(2)}°, {hotspot.lng.toFixed(2)}°</span>)}</div></div>
       </motion.section>
 
-      <motion.section className={`timeline-dock ${viewMode === 'replay' ? 'is-visible' : ''}`} aria-label="Timeline playback" initial={{ opacity: 0, y: 13 }} animate={{ opacity: 1, y: 0 }} transition={{ ...panelTransition, delay: 0.4 }}>
+      <motion.section
+        ref={timelineDockRef}
+        className={`timeline-dock ${viewMode === 'replay' ? 'is-visible' : ''}`}
+        aria-label="Timeline playback"
+        initial={{ opacity: 0, y: 13 }}
+        animate={viewMode === 'stats' ? { opacity: 0, y: 24 } : { opacity: 1, y: 0 }}
+        transition={viewMode === 'stats' ? { duration: 0.28, ease: motionEase } : isReturningFromStats ? timelineReturnTransition : { duration: 0.42, ease: motionEase }}
+        onAnimationComplete={() => {
+          if (isReturningFromStats) {
+            setIsReturningFromStats(false);
+          }
+        }}
+        style={{ pointerEvents: viewMode === 'stats' ? 'none' : 'auto' }}
+      >
         <div className="timeline-dock-top">
           <div className="timeline-label"><span className="playhead-dot" /> <span>{viewMode === 'replay' ? 'LIVE REPLAY' : 'TIMELINE REPLAY'}</span></div>
           <strong>{formatDate(currentDate)} <span className="timeline-time">{new Intl.DateTimeFormat('en', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(currentDate)}</span></strong>
@@ -486,9 +549,9 @@ export default function Home() {
           </div>
         </div>
         <div className="timeline-controls">
-          <button className="play-button" type="button" onClick={() => { if (playbackProgress >= 1) { progressRef.current = 0; setPlaybackProgress(0); } setViewMode('replay'); setIsPlaying((value) => !value); }} aria-label={isPlaying ? 'Pause replay' : 'Play replay'}>{isPlaying ? 'Ⅱ' : '▶'}</button>
+          <button className="play-button" type="button" onClick={() => { if (playbackProgress >= 1) { progressRef.current = 0; setPlaybackProgress(0); } chooseView('replay'); setIsPlaying((value) => !value); }} aria-label={isPlaying ? 'Pause replay' : 'Play replay'}>{isPlaying ? 'Ⅱ' : '▶'}</button>
           <div className="range-wrap">
-            <input aria-label="Timeline position" type="range" min="0" max="1000" value={Math.round(playbackProgress * 1000)} onChange={(event) => { const next = Number(event.target.value) / 1000; progressRef.current = next; setPlaybackProgress(next); setViewMode('replay'); setIsPlaying(false); }} />
+            <input aria-label="Timeline position" type="range" min="0" max="1000" value={Math.round(playbackProgress * 1000)} onChange={(event) => { const next = Number(event.target.value) / 1000; progressRef.current = next; setPlaybackProgress(next); chooseView('replay'); setIsPlaying(false); }} />
             <div className="range-labels"><span>{formatDate(visibleTimeline.coverage.start, false)}</span><span>{formatDate(visibleTimeline.coverage.end, false)}</span></div>
           </div>
           <span className="route-count">{formatCount(visibleTimeline.playback.length)} moments</span>
