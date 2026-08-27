@@ -23,6 +23,9 @@ ENV PORT=3000
 
 WORKDIR /app
 
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
 COPY --from=builder /app/dist/standalone ./
 
 USER node
