@@ -34,7 +34,7 @@ npm install
 npm run dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+Then open [http://localhost:7863](http://localhost:7863).
 
 Roamline works with the built-in CARTO fallback. To use a Mapbox dark basemap locally, add a public token to `.env.local`:
 
@@ -50,13 +50,19 @@ Build and run the production image:
 
 ```bash
 docker build -t roamline .
-docker run --publish 3000:3000 roamline
+docker run --publish 7863:7863 roamline
 ```
 
 The image uses the CARTO basemap fallback by default. To include an optional public Mapbox token at build time:
 
 ```bash
 docker build --build-arg VITE_MAPBOX_ACCESS_TOKEN=your_public_mapbox_token -t roamline .
+```
+
+An example Compose configuration is available at `docker-compose.example.yml`:
+
+```bash
+docker compose -f docker-compose.example.yml up --build
 ```
 
 ## Quality checks

@@ -36,12 +36,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Start container
-        run: docker run --detach --name roamline-ci --publish 3000:3000 roamline:ci
+        run: docker run --detach --name roamline-ci --publish 7863:7863 roamline:ci
 
       - name: Check HTTP response
         run: |
           for attempt in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+            if curl --fail --silent http://127.0.0.1:7863/ > /dev/null; then
               exit 0
             fi
             sleep 1

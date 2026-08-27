@@ -19,7 +19,7 @@ FROM node:22-alpine AS runner
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV PORT=3000
+ENV PORT=7863
 
 WORKDIR /app
 
@@ -30,6 +30,6 @@ COPY --from=builder /app/dist/standalone ./
 
 USER node
 
-EXPOSE 3000
+EXPOSE 7863
 
 CMD ["node", "server.js"]

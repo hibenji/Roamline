@@ -1,0 +1,14 @@
+services:
+  roamline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_MAPBOX_ACCESS_TOKEN: ${VITE_MAPBOX_ACCESS_TOKEN:-}
+    ports:
+      - '7863:7863'
+    environment:
+      HOST: 0.0.0.0
+      PORT: 7863
+      NODE_ENV: production
+    restart: unless-stopped

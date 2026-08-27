@@ -6,9 +6,9 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "vinext dev",
+    "dev": "vinext dev --port 7863",
     "build": "vinext build",
-    "start": "vinext start",
+    "start": "vinext start --port 7863",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit",
