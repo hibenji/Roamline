@@ -1,10 +1,6 @@
 services:
   roamline:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        VITE_MAPBOX_ACCESS_TOKEN: ${VITE_MAPBOX_ACCESS_TOKEN:-}
+    image: ${ROAMLINE_IMAGE:-ghcr.io/hibenji/roamline:latest}
     ports:
       - '7863:7863'
     environment:

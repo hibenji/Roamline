@@ -21,6 +21,8 @@ ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=7863
 
+LABEL org.opencontainers.image.source="https://github.com/hibenji/roamline"
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./

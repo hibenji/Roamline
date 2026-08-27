@@ -59,11 +59,13 @@ The image uses the CARTO basemap fallback by default. To include an optional pub
 docker build --build-arg VITE_MAPBOX_ACCESS_TOKEN=your_public_mapbox_token -t roamline .
 ```
 
-An example Compose configuration is available at `docker-compose.example.yml`:
+The public image is used by the example Compose configuration:
 
 ```bash
-docker compose -f docker-compose.example.yml up --build
+docker compose -f docker-compose.example.yml up -d
 ```
+
+The GitHub Actions workflow publishes `ghcr.io/hibenji/roamline:latest` after successful builds on `main`. The first publication may need to be changed to Public in the repository's GitHub Packages settings before it can be pulled anonymously.
 
 ## Quality checks
 
