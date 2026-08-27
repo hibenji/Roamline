@@ -609,6 +609,26 @@ button {
   gap: 5px;
 }
 
+.view-tab-all {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.view-tab-replay {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.view-tab-heatmap {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.view-tab-stats {
+  grid-column: 4;
+  grid-row: 1;
+}
+
 .layer-settings {
   max-height: 720px;
   overflow: visible;
@@ -634,7 +654,7 @@ button {
   border-radius: 8px;
   color: #8d9aad;
   font-size: 10px;
-  transition: color 160ms ease;
+  z-index: 1;
 }
 
 .view-tab-content {
@@ -651,11 +671,13 @@ button {
 }
 
 .view-tab-active-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+  display: block;
+  align-self: stretch;
+  justify-self: stretch;
+  min-height: 33px;
   border-radius: 8px;
   background: rgba(255, 243, 196, 0.11);
+  z-index: 0;
 }
 
 .view-tab:hover,
@@ -1882,6 +1904,16 @@ input:focus-visible {
 
   .view-tabs {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .view-tab-heatmap {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .view-tab-stats {
+    grid-column: 2;
+    grid-row: 2;
   }
 
   .roamline-shell.is-stats .layer-panel {

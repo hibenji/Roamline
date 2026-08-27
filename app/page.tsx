@@ -433,6 +433,13 @@ export default function Home() {
         </motion.div>
         <motion.div className="view-switcher-box" layout="position" transition={{ layout: isReturningFromStats ? statsReturnTransition : layerLayoutTransition }}>
           <div className="view-tabs" role="tablist" aria-label="Globe view">
+            <motion.span
+              className={`view-tab-active-bg view-tab-${viewMode}`}
+              layout
+              initial={false}
+              transition={layerLayoutTransition}
+              aria-hidden="true"
+            />
             {([
               ['all', 'All activity', '◉'],
               ['replay', 'Replay', '▶'],
@@ -441,14 +448,15 @@ export default function Home() {
             ] as Array<[GlobeViewMode, string, string]>).map(([key, label, icon]) => (
               <motion.button
                 key={key}
-                className={`view-tab ${viewMode === key ? 'is-active' : ''}`}
+                className={`view-tab view-tab-${key} ${viewMode === key ? 'is-active' : ''}`}
                 onClick={() => chooseView(key)}
                 type="button"
                 role="tab"
                 aria-selected={viewMode === key}
+                animate={{ color: viewMode === key ? '#fff4d0' : '#8d9aad' }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
                 whileTap={{ scale: 0.97 }}
               >
-                {viewMode === key && <motion.span className="view-tab-active-bg" layoutId="active-view-tab" transition={layerLayoutTransition} aria-hidden="true" />}
                 <span className="view-tab-content"><span aria-hidden="true">{icon}</span>{label}</span>
               </motion.button>
             ))}
