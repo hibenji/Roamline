@@ -3,6 +3,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { GeoJSONSource, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import type { ModeKey, NormalizedTimeline, Point } from '../timeline';
 
@@ -31,6 +32,8 @@ const ROUTE_COLORS: Record<ModeKey, string> = {
   water: '#60a5fa',
   other: '#a8b1c2',
 };
+
+const globeFadeEase = [0.22, 1, 0.36, 1] as const;
 
 const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN?.trim() ?? '';
 const CARTO_DARK_TILES = [
@@ -650,17 +653,35 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
 
   return (
     <div className="globe-layer">
-      <div ref={containerRef} className="globe-canvas" aria-label="Interactive 3D globe showing your timeline" />
-      {viewMode === 'all' && selectedDetail && (
+      <motion.div
+        ref={containerRef}
+        className="globe-canvas"
+        animate={{ opacity: viewMode === 'stats' ? 0.24 : 1 }}
+        transition={{ duration: 0.55, ease: globeFadeEase }}
+        aria-label="Interactive 3D globe showing your timeline"
+      />
+      <AnimatePresence initial={false}>
+        {viewMode === 'all' && selectedDetail && (
         <>
-          <span
+          <motion.span
+            key={`${selectedDetail.kind}-${selectedDetail.start}-anchor`}
             className={`map-detail-anchor ${selectedDetail.kind}`}
             style={{ left: selectedDetail.screenX, top: selectedDetail.screenY }}
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: [0.72, 1, 0.72], scale: [0.86, 1.16, 0.86] }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ duration: 1.8, ease: 'easeInOut', repeat: Infinity }}
             aria-hidden="true"
           />
-          <aside
+          <motion.aside
+            key={`${selectedDetail.kind}-${selectedDetail.start}-popup`}
             className={`map-detail-popup ${selectedDetail.placement}`}
             style={{ left: selectedDetail.screenX, top: selectedDetail.screenY }}
+            layout
+            initial={{ opacity: 0, scale: 0.92, y: selectedDetail.placement === 'above' ? 13 : -13 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: selectedDetail.placement === 'above' ? 13 : -13 }}
+            transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
             aria-label={`${detailTitle} details`}
           >
             <button className="map-detail-close" type="button" onClick={closeSelectedDetail} aria-label="Close map detail">×</button>
@@ -675,9 +696,10 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
               <button type="button" onClick={() => focusSelectedDetail(0)} disabled={!Number.isFinite(selectedDetail.start)}>This day</button>
               <button type="button" onClick={() => focusSelectedDetail(2)} disabled={!Number.isFinite(selectedDetail.start)}>±2 days</button>
             </div>
-          </aside>
+          </motion.aside>
         </>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

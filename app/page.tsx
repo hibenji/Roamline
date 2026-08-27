@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import GlobeMap, { pointAtProgress, type GlobeViewMode, type HeatViewMode } from './components/GlobeMap';
 import StatsView from './components/StatsView';
 import TimelineWorker from './timeline.worker?worker';
@@ -31,6 +32,10 @@ const modeColors: Record<ModeKey, string> = {
   water: '#299a98',
   other: '#68727c',
 };
+
+const motionEase = [0.22, 1, 0.36, 1] as const;
+const panelTransition = { duration: 0.65, ease: motionEase };
+const layerLayoutTransition = { type: 'spring' as const, stiffness: 260, damping: 30, mass: 0.8 };
 
 function formatDate(timestamp: number, includeYear = true) {
   return new Intl.DateTimeFormat('en', {
@@ -84,6 +89,7 @@ export default function Home() {
   const [loadMessage, setLoadMessage] = useState('');
   const [progress, setProgress] = useState(0);
   const [mapReady, setMapReady] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const workerRef = useRef<Worker | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const progressRef = useRef(playbackProgress);
@@ -106,6 +112,14 @@ export default function Home() {
       media.removeEventListener?.('change', handleChange);
       workerRef.current?.terminate();
     };
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 760px)');
+    const handleChange = () => setIsMobileViewport(media.matches);
+    handleChange();
+    media.addEventListener?.('change', handleChange);
+    return () => media.removeEventListener?.('change', handleChange);
   }, []);
 
   useEffect(() => {
@@ -143,6 +157,7 @@ export default function Home() {
   const rangeLabel = `${formatRangeDate(fromDate, 'Beginning')} → ${formatRangeDate(toDate, 'Latest')}`;
   const rangeHasData = visibleTimeline.playback.length > 0 || visibleTimeline.routes.features.length > 0 || visibleTimeline.visits.features.length > 0;
   const allModesSelected = selectedModes.length === MODES.length;
+  const isMobileStats = isMobileViewport && viewMode === 'stats';
 
   const focusMapDateRange = useCallback((nextFromDate: string, nextToDate: string) => {
     setPreviousRange({ fromDate, toDate });
@@ -289,7 +304,8 @@ export default function Home() {
         : 'Brighter means more route passages';
 
   return (
-    <main className={`roamline-shell ${viewMode === 'stats' ? 'is-stats' : ''} ${loadState === 'ready' ? 'has-loaded-file' : ''}`}>
+    <MotionConfig reducedMotion="user">
+      <main className={`roamline-shell ${viewMode === 'stats' ? 'is-stats' : ''} ${loadState === 'ready' ? 'has-loaded-file' : ''}`}>
       <div className="atmosphere atmosphere-one" />
       <div className="atmosphere atmosphere-two" />
 
@@ -306,7 +322,7 @@ export default function Home() {
         onFocusRange={focusMapDateRange}
       />
 
-      <header className="topbar">
+      <motion.header className="topbar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={panelTransition}>
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true"><span /></span>
           <span className="brand-name">ROAMLINE</span>
@@ -314,15 +330,15 @@ export default function Home() {
           <span className="brand-caption">private location atlas</span>
         </div>
         <div className="topbar-actions">
-          <span className={`connection-status ${mapReady ? 'is-ready' : ''}`}><span /> {mapReady ? 'globe online' : 'starting globe'}</span>
+          <span className={`connection-status ${mapReady ? 'is-ready' : ''}`}><motion.span animate={mapReady ? { opacity: [0.68, 1, 0.68], scale: [0.86, 1.16, 0.86] } : { opacity: 0.68, scale: 0.86 }} transition={{ duration: 2.4, ease: 'easeInOut', repeat: mapReady ? Infinity : 0 }} /> {mapReady ? 'globe online' : 'starting globe'}</span>
           <button className={`orbit-toggle ${autoRotate ? 'is-active' : ''}`} onClick={() => setAutoRotate((value) => !value)} type="button">
             <span aria-hidden="true">◌</span> {autoRotate ? 'Pause orbit' : 'Orbit globe'}
           </button>
           <button className="reset-button" onClick={resetDemo} type="button">Reset demo</button>
         </div>
-      </header>
+      </motion.header>
 
-      <section className="control-panel intro-panel">
+      <motion.section className="control-panel intro-panel" initial={{ opacity: 0, y: 13 }} animate={{ opacity: 1, y: 0 }} transition={{ ...panelTransition, delay: 0.08 }}>
         <div className="eyebrow"><span className="eyebrow-dot" /> LOCATION MEMORY / 01</div>
         <h1>See the shape<br /><em>of your days.</em></h1>
         <p className="intro-copy">A quiet, visual record of everywhere you’ve been — orbit it, replay it, feel the patterns.</p>
@@ -349,89 +365,119 @@ export default function Home() {
 
         {loadState === 'error' && <p className="error-message" role="alert">{loadMessage}</p>}
         {loadState !== 'error' && <div className="load-meta"><span className={`state-dot ${loadState}`} /> <span>{loadState === 'demo' ? 'Synthetic demo' : loadState === 'reading' ? loadMessage : loadLabel}</span><span className="local-chip">LOCAL ONLY</span></div>}
-      </section>
+      </motion.section>
 
-      <section className="control-panel layer-panel">
-        <div className="panel-heading">
+      <motion.section className="control-panel layer-panel" layout initial={{ opacity: 0, y: 13 }} animate={{ opacity: 1, y: 0 }} transition={{ ...panelTransition, delay: 0.18, layout: layerLayoutTransition }}>
+        <motion.div
+          className="panel-heading"
+          aria-hidden={isMobileStats}
+          initial={false}
+          animate={isMobileStats ? { height: 0, opacity: 0, y: -10 } : { height: 'auto', opacity: 1, y: 0 }}
+          transition={{ height: panelTransition, opacity: { duration: 0.28 }, y: panelTransition }}
+          style={{ overflow: 'hidden' }}
+        >
           <div>
             <div className="eyebrow">VIEW LAYERS</div>
             <p>{modeDescription}</p>
           </div>
           <span className="layer-count">{formatCount(visibleTimeline.stats.routePointCount)} pts</span>
-        </div>
-        <div className="view-tabs" role="tablist" aria-label="Globe view">
-          {([
-            ['all', 'All activity', '◉'],
-            ['replay', 'Replay', '▶'],
-            ['heatmap', 'Heatmap', '◌'],
-            ['stats', 'Stats', '✦'],
-          ] as Array<[GlobeViewMode, string, string]>).map(([key, label, icon]) => (
-            <button key={key} className={`view-tab ${viewMode === key ? 'is-active' : ''}`} onClick={() => chooseView(key)} type="button" role="tab" aria-selected={viewMode === key}>
-              <span aria-hidden="true">{icon}</span>{label}
-            </button>
-          ))}
-        </div>
+        </motion.div>
+        <motion.div className="view-switcher-box" layout="position">
+          <div className="view-tabs" role="tablist" aria-label="Globe view">
+            {([
+              ['all', 'All activity', '◉'],
+              ['replay', 'Replay', '▶'],
+              ['heatmap', 'Heatmap', '◌'],
+              ['stats', 'Stats', '✦'],
+            ] as Array<[GlobeViewMode, string, string]>).map(([key, label, icon]) => (
+              <motion.button
+                key={key}
+                className={`view-tab ${viewMode === key ? 'is-active' : ''}`}
+                onClick={() => chooseView(key)}
+                type="button"
+                role="tab"
+                aria-selected={viewMode === key}
+                whileTap={{ scale: 0.97 }}
+              >
+                {viewMode === key && <motion.span className="view-tab-active-bg" layoutId="active-view-tab" transition={layerLayoutTransition} aria-hidden="true" />}
+                <span className="view-tab-content"><span aria-hidden="true">{icon}</span>{label}</span>
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
 
-        <details className="range-details">
-          <summary>
-            <span className="range-summary-copy"><span className="range-summary-icon" aria-hidden="true">◷</span><span><strong>TIME RANGE</strong><small>{rangeLabel}</small></span></span>
-            <span className="range-chevron" aria-hidden="true">⌄</span>
-          </summary>
-          <div className="range-popover">
-            <div className="range-fields">
-              <label>From<input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setRangeFocusActive(false); setPreviousRange(null); }} /></label>
-              <label>To<input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setRangeFocusActive(false); setPreviousRange(null); }} /></label>
+        <motion.div
+          className="layer-settings"
+          aria-hidden={isMobileStats}
+          inert={isMobileStats || undefined}
+          initial={false}
+          animate={isMobileStats ? { height: 0, opacity: 0, y: -10 } : { height: 'auto', opacity: 1, y: 0 }}
+          transition={{ height: panelTransition, opacity: { duration: 0.28 }, y: panelTransition }}
+          style={{ overflow: isMobileStats ? 'hidden' : 'visible', pointerEvents: isMobileStats ? 'none' : 'auto' }}
+        >
+          <details className="range-details">
+            <summary>
+              <span className="range-summary-copy"><span className="range-summary-icon" aria-hidden="true">◷</span><span><strong>TIME RANGE</strong><small>{rangeLabel}</small></span></span>
+              <span className="range-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div className="range-popover">
+              <div className="range-fields">
+                <label>From<input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setRangeFocusActive(false); setPreviousRange(null); }} /></label>
+                <label>To<input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setRangeFocusActive(false); setPreviousRange(null); }} /></label>
+              </div>
+              <div className="range-actions"><button type="button" onClick={clearDateRange}>Full timeline</button><span>Default: since 2022</span></div>
+              {rangeError && <p className="range-message" role="alert">End date must be on or after the start date.</p>}
+              {!rangeError && !rangeHasData && <p className="range-message" role="status">No locations found in this range.</p>}
             </div>
-            <div className="range-actions"><button type="button" onClick={clearDateRange}>Full timeline</button><span>Default: since 2022</span></div>
-            {rangeError && <p className="range-message" role="alert">End date must be on or after the start date.</p>}
-            {!rangeError && !rangeHasData && <p className="range-message" role="status">No locations found in this range.</p>}
+          </details>
+
+          {viewMode === 'heatmap' && (
+            <div className="heat-switch" role="group" aria-label="Heatmap metric">
+              <button className={heatMode === 'dwell' ? 'is-active' : ''} onClick={() => setHeatMode('dwell')} type="button"><span className="heat-swatch dwell" />Time spent</button>
+              <button className={heatMode === 'movement' ? 'is-active' : ''} onClick={() => setHeatMode('movement')} type="button"><span className="heat-swatch movement" />Movement frequency</button>
+            </div>
+          )}
+
+          <div className="filter-heading"><span>ACTIVITY</span><button type="button" onClick={() => setSelectedModes(allModesSelected ? [] : MODES.map((mode) => mode.key))}>{allModesSelected ? 'Clear' : 'All modes'}</button></div>
+          <div className="mode-filters">
+            {MODES.map((mode) => (
+              <button key={mode.key} className={`mode-pill ${selectedModes.includes(mode.key) ? 'is-selected' : ''}`} onClick={() => toggleMode(mode.key)} style={{ '--mode-color': modeColors[mode.key] } as CSSProperties} type="button">
+                <span className="mode-dot" aria-hidden="true" />{mode.short}
+              </button>
+            ))}
           </div>
-        </details>
+          <label className="toggle-row">
+            <span><span className="toggle-icon" aria-hidden="true">⌖</span> Show visited places</span>
+            <input type="checkbox" checked={showVisits} onChange={(event) => setShowVisits(event.target.checked)} />
+            <span className="toggle-track" aria-hidden="true"><span /></span>
+          </label>
+          <label className="toggle-row">
+            <span><span className="toggle-icon" aria-hidden="true">↝</span> Connect timeline points</span>
+            <input type="checkbox" checked={connectSequential} onChange={(event) => setConnectSequential(event.target.checked)} />
+            <span className="toggle-track" aria-hidden="true"><span /></span>
+          </label>
+        </motion.div>
+      </motion.section>
 
-        {viewMode === 'heatmap' && (
-          <div className="heat-switch" role="group" aria-label="Heatmap metric">
-            <button className={heatMode === 'dwell' ? 'is-active' : ''} onClick={() => setHeatMode('dwell')} type="button"><span className="heat-swatch dwell" />Time spent</button>
-            <button className={heatMode === 'movement' ? 'is-active' : ''} onClick={() => setHeatMode('movement')} type="button"><span className="heat-swatch movement" />Movement frequency</button>
-          </div>
-        )}
-
-        <div className="filter-heading"><span>ACTIVITY</span><button type="button" onClick={() => setSelectedModes(allModesSelected ? [] : MODES.map((mode) => mode.key))}>{allModesSelected ? 'Clear' : 'All modes'}</button></div>
-        <div className="mode-filters">
-          {MODES.map((mode) => (
-            <button key={mode.key} className={`mode-pill ${selectedModes.includes(mode.key) ? 'is-selected' : ''}`} onClick={() => toggleMode(mode.key)} style={{ '--mode-color': modeColors[mode.key] } as CSSProperties} type="button">
-              <span className="mode-dot" aria-hidden="true" />{mode.short}
-            </button>
-          ))}
-        </div>
-        <label className="toggle-row">
-          <span><span className="toggle-icon" aria-hidden="true">⌖</span> Show visited places</span>
-          <input type="checkbox" checked={showVisits} onChange={(event) => setShowVisits(event.target.checked)} />
-          <span className="toggle-track" aria-hidden="true"><span /></span>
-        </label>
-        <label className="toggle-row">
-          <span><span className="toggle-icon" aria-hidden="true">↝</span> Connect timeline points</span>
-          <input type="checkbox" checked={connectSequential} onChange={(event) => setConnectSequential(event.target.checked)} />
-          <span className="toggle-track" aria-hidden="true"><span /></span>
-        </label>
-      </section>
-
-      {rangeFocusActive && (
-        <button className="range-back-button" type="button" onClick={goBackFromFocusedRange}>
+      <AnimatePresence initial={false}>
+        {rangeFocusActive && (
+        <motion.button className="range-back-button" type="button" onClick={goBackFromFocusedRange} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.26, ease: motionEase }}>
           <span aria-hidden="true">←</span> Back
-        </button>
-      )}
+        </motion.button>
+        )}
+      </AnimatePresence>
 
-      {viewMode === 'stats' && <StatsView timeline={visibleTimeline} selectedModes={selectedModes} showVisits={showVisits} />}
+      <StatsView timeline={visibleTimeline} selectedModes={selectedModes} showVisits={showVisits} isVisible={viewMode === 'stats'} />
 
-      <section className="stats-panel" aria-label="Timeline summary">
+      <motion.section className="stats-panel" aria-label="Timeline summary" initial={{ opacity: 0, y: 13 }} animate={{ opacity: 1, y: 0 }} transition={{ ...panelTransition, delay: 0.3 }}>
         <div className="stats-intro"><span className="eyebrow">THE LONG VIEW</span><strong>{formatDate(visibleTimeline.coverage.start)} <span>→</span> {formatDate(visibleTimeline.coverage.end)}</strong></div>
         <div className="stat-item"><span>ACTIVE DAYS</span><strong>{formatCount(visibleTimeline.stats.activeDays)}</strong></div>
         <div className="stat-item"><span>DISTANCE</span><strong>{formatDistance(visibleTimeline.stats.distanceMeters)}</strong></div>
         <div className="stat-item"><span>VISITS</span><strong>{formatCount(visibleTimeline.stats.visitCount)}</strong></div>
         <div className="stat-item hotspots"><span>HOT ZONES</span><div className="hotspot-chips">{visibleTimeline.stats.hotspots.slice(0, 3).map((hotspot, index) => <span key={`${hotspot.lat}-${hotspot.lng}-${index}`}>{index + 1} · {hotspot.lat.toFixed(2)}°, {hotspot.lng.toFixed(2)}°</span>)}</div></div>
-      </section>
+      </motion.section>
 
-      <section className={`timeline-dock ${viewMode === 'replay' ? 'is-visible' : ''}`} aria-label="Timeline playback">
+      <motion.section className={`timeline-dock ${viewMode === 'replay' ? 'is-visible' : ''}`} aria-label="Timeline playback" initial={{ opacity: 0, y: 13 }} animate={{ opacity: 1, y: 0 }} transition={{ ...panelTransition, delay: 0.4 }}>
         <div className="timeline-dock-top">
           <div className="timeline-label"><span className="playhead-dot" /> <span>{viewMode === 'replay' ? 'LIVE REPLAY' : 'TIMELINE REPLAY'}</span></div>
           <strong>{formatDate(currentDate)} <span className="timeline-time">{new Intl.DateTimeFormat('en', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(currentDate)}</span></strong>
@@ -447,9 +493,10 @@ export default function Home() {
           </div>
           <span className="route-count">{formatCount(visibleTimeline.playback.length)} moments</span>
         </div>
-      </section>
+      </motion.section>
 
       <footer className="privacy-note"><span className="lock-mark" aria-hidden="true">⌁</span> Your timeline is processed locally. We never see where you’ve been.</footer>
-    </main>
+      </main>
+    </MotionConfig>
   );
 }

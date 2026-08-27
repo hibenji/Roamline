@@ -36,64 +36,9 @@ button {
   color: inherit;
 }
 
-@keyframes topbar-arrive {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes panel-arrive {
-  from { opacity: 0; transform: translateY(13px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes stats-page-arrive {
-  from { opacity: 0; transform: translateY(10px) scale(0.992); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes stats-overlay-arrive {
-  from { opacity: 0; transform: translateY(4%) scale(0.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
 @keyframes atmosphere-drift {
   from { transform: translate3d(-1.5%, -1%, 0) scale(0.98); }
   to { transform: translate3d(1.5%, 1%, 0) scale(1.03); }
-}
-
-@keyframes status-pulse {
-  0%, 100% { opacity: 0.68; transform: scale(0.86); }
-  50% { opacity: 1; transform: scale(1.16); }
-}
-
-@keyframes chart-draw {
-  from { stroke-dashoffset: 1800; opacity: 0.2; }
-  to { stroke-dashoffset: 0; opacity: 1; }
-}
-
-@keyframes chart-area-rise {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes chart-point-pop {
-  from { opacity: 0; transform: scale(0.4); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes map-detail-pop {
-  from { opacity: 0; transform: translate(-50%, calc(-100% - 13px)) scale(0.92); }
-  to { opacity: 1; transform: translate(-50%, calc(-100% - 19px)) scale(1); }
-}
-
-@keyframes map-detail-pop-below {
-  from { opacity: 0; transform: translate(-50%, 13px) scale(0.92); }
-  to { opacity: 1; transform: translate(-50%, 19px) scale(1); }
-}
-
-@keyframes map-detail-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(255, 243, 196, 0.18); }
-  50% { box-shadow: 0 0 0 8px rgba(255, 243, 196, 0); }
 }
 
 .roamline-shell {
@@ -116,7 +61,6 @@ button {
   inset: 0;
   z-index: 0;
   pointer-events: auto;
-  transition: opacity 550ms ease;
 }
 
 .globe-canvas .maplibregl-map {
@@ -134,7 +78,6 @@ button {
   border: 2px solid #0b121f;
   border-radius: 50%;
   background: #fff3c4;
-  animation: map-detail-pulse 1.8s ease-out infinite;
   pointer-events: none;
 }
 
@@ -152,14 +95,12 @@ button {
   background: rgba(11, 18, 31, 0.96);
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.42), 0 4px 16px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(18px);
-  transform: translate(-50%, calc(-100% - 19px));
-  animation: map-detail-pop 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  translate: -50% calc(-100% - 19px);
   pointer-events: auto;
 }
 
 .map-detail-popup.below {
-  transform: translate(-50%, 19px);
-  animation-name: map-detail-pop-below;
+  translate: -50% 19px;
 }
 
 .map-detail-close {
@@ -334,7 +275,6 @@ button {
   padding: 0 30px;
   border-bottom: 1px solid rgba(220, 229, 242, 0.1);
   background: linear-gradient(180deg, rgba(8, 12, 21, 0.93), rgba(8, 12, 21, 0.45));
-  animation: topbar-arrive 650ms ease-out both;
 }
 
 .brand-lockup,
@@ -425,10 +365,6 @@ button {
   box-shadow: 0 0 9px rgba(137, 245, 201, 0.9);
 }
 
-.connection-status.is-ready > span {
-  animation: status-pulse 2.4s ease-in-out infinite;
-}
-
 .orbit-toggle {
   gap: 7px;
   padding: 9px 12px;
@@ -480,7 +416,6 @@ button {
   left: 30px;
   width: min(356px, calc(100vw - 60px));
   padding: 23px;
-  animation: panel-arrive 650ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
 }
 
 .roamline-shell.has-loaded-file .intro-panel {
@@ -636,7 +571,6 @@ button {
   left: 30px;
   width: min(356px, calc(100vw - 60px));
   padding: 17px;
-  animation: panel-arrive 650ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
 }
 
 .panel-heading {
@@ -659,15 +593,25 @@ button {
   letter-spacing: 0.04em;
 }
 
-.view-tabs {
+.view-switcher-box {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 5px;
   margin-top: 15px;
   padding: 4px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 11px;
   background: rgba(2, 6, 13, 0.33);
+}
+
+.view-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.layer-settings {
+  max-height: 720px;
+  overflow: visible;
 }
 
 .view-tab,
@@ -681,26 +625,46 @@ button {
 }
 
 .view-tab {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
   min-height: 33px;
   border-radius: 8px;
   color: #8d9aad;
   font-size: 10px;
-  transition: background 160ms ease, color 160ms ease;
+  transition: color 160ms ease;
 }
 
-.view-tab span {
+.view-tab-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.view-tab-content > span {
   color: var(--orange);
   font-size: 13px;
 }
 
+.view-tab-active-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 8px;
+  background: rgba(255, 243, 196, 0.11);
+}
+
 .view-tab:hover,
 .view-tab.is-active {
-  background: rgba(255, 243, 196, 0.11);
   color: #fff4d0;
+}
+
+.view-tab:not(.is-active):hover {
+  background: rgba(255, 243, 196, 0.11);
 }
 
 .heat-switch {
@@ -844,7 +808,6 @@ button {
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
-  animation: panel-arrive 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
@@ -1041,10 +1004,6 @@ button {
   transform: translateX(12px);
 }
 
-.roamline-shell.is-stats .globe-canvas {
-  opacity: 0.24;
-}
-
 .roamline-shell.is-stats .stats-panel,
 .roamline-shell.is-stats .timeline-dock {
   display: none;
@@ -1069,7 +1028,6 @@ button {
   --stats-accent-soft: rgba(158, 176, 189, 0.1);
   --stats-muted: #8996a4;
   --stats-ink: #e8edf0;
-  animation: stats-page-arrive 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .stats-page-heading,
@@ -1184,17 +1142,12 @@ button {
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0;
   background: transparent;
-  animation: panel-arrive 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .stats-kpi:first-child {
   padding-left: 0;
   border-left: 0;
 }
-
-.stats-kpi:nth-child(2) { animation-delay: 70ms; }
-.stats-kpi:nth-child(3) { animation-delay: 140ms; }
-.stats-kpi:nth-child(4) { animation-delay: 210ms; }
 
 .stats-kpi strong {
   overflow: hidden;
@@ -1242,14 +1195,12 @@ button {
 .stats-chart-section {
   margin-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  animation: panel-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1) 250ms both;
 }
 
 .stats-detail-grid {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.stats-detail-section { animation: panel-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1) 330ms both; }
 .stats-detail-section + .stats-detail-section {
   padding-left: 24px;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
@@ -1258,7 +1209,6 @@ button {
 .signature-section {
   margin-top: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  animation: panel-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1) 410ms both;
 }
 
 .stats-chart-section {
@@ -1336,8 +1286,6 @@ button {
 
 .trend-area {
   fill: rgba(158, 176, 189, 0.1);
-  transform-origin: center bottom;
-  animation: chart-area-rise 800ms ease-out 350ms both;
 }
 
 .trend-line {
@@ -1346,9 +1294,6 @@ button {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.5;
-  stroke-dasharray: 1800;
-  stroke-dashoffset: 1800;
-  animation: chart-draw 1100ms ease-out 350ms forwards;
 }
 
 .trend-point {
@@ -1357,12 +1302,7 @@ button {
   stroke-width: 2;
   transform-box: fill-box;
   transform-origin: center;
-  animation: chart-point-pop 360ms ease-out both;
 }
-
-.trend-point:nth-of-type(2) { animation-delay: 420ms; }
-.trend-point:nth-of-type(3) { animation-delay: 470ms; }
-.trend-point:nth-of-type(4) { animation-delay: 520ms; }
 
 .stats-detail-grid {
   display: grid;
@@ -1644,7 +1584,6 @@ button {
   background: linear-gradient(120deg, rgba(11, 18, 31, 0.87), rgba(16, 26, 44, 0.66));
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(21px);
-  animation: panel-arrive 700ms cubic-bezier(0.22, 1, 0.36, 1) 300ms both;
 }
 
 .stats-intro,
@@ -1721,7 +1660,6 @@ button {
   opacity: 0.92;
   transform: translateX(50%);
   transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
-  animation: topbar-arrive 700ms ease-out 400ms both;
 }
 
 .timeline-dock:hover,
@@ -1952,16 +1890,11 @@ input:focus-visible {
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
-    animation: none;
+    pointer-events: auto;
   }
 
-  .roamline-shell.is-stats .layer-panel .panel-heading,
-  .roamline-shell.is-stats .layer-panel .range-details,
-  .roamline-shell.is-stats .layer-panel .heat-switch,
-  .roamline-shell.is-stats .layer-panel .filter-heading,
-  .roamline-shell.is-stats .layer-panel .mode-filters,
-  .roamline-shell.is-stats .layer-panel .toggle-row {
-    display: none;
+  .roamline-shell.is-stats .layer-panel .view-switcher-box {
+    margin-top: 0;
   }
 
   .roamline-shell.is-stats .layer-panel .view-tabs {
@@ -1971,12 +1904,12 @@ input:focus-visible {
   .stats-page {
     inset: 0;
     z-index: 2;
-    padding: calc(136px + env(safe-area-inset-top)) 17px calc(30px + env(safe-area-inset-bottom));
+    padding: calc(182px + env(safe-area-inset-top)) 17px calc(30px + env(safe-area-inset-bottom));
     border: 0;
     border-radius: 0;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    animation: stats-overlay-arrive 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform;
   }
 
   .stats-page-heading {
