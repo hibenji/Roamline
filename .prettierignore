@@ -1,0 +1,11 @@
+node_modules
+.next
+.vinext
+.wrangler
+dist
+coverage
+*.tsbuildinfo
+*.tar.gz
+.video-frames
+.video-frames-8
+.video-frames-fast

@@ -7,3 +7,11 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+declare module '*?worker' {
+  const WorkerConstructor: {
+    new (): Worker;
+  };
+
+  export default WorkerConstructor;
+}

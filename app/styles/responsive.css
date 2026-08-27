@@ -1,0 +1,245 @@
+@media (max-width: 1100px) {
+  .timeline-dock {
+    right: 30px;
+    bottom: 145px;
+    left: 416px;
+    width: auto;
+    min-width: 0;
+    transform: none;
+  }
+
+  .stats-panel {
+    grid-template-columns: 1.6fr repeat(3, 0.8fr);
+  }
+
+  .hotspots {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .roamline-shell {
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .roamline-shell.is-stats {
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .topbar {
+    height: 66px;
+    padding: 0 16px;
+  }
+
+  .brand-caption,
+  .connection-status {
+    display: none;
+  }
+
+  .brand-divider {
+    margin-left: 2px;
+  }
+
+  .intro-panel,
+  .layer-panel {
+    left: 16px;
+    width: calc(100vw - 32px);
+  }
+
+  .intro-panel {
+    top: 82px;
+  }
+
+  .layer-panel {
+    top: auto;
+    right: 16px;
+    bottom: 25px;
+    width: auto;
+    padding-bottom: var(--timeline-dock-height, env(safe-area-inset-bottom));
+  }
+
+  .roamline-shell.has-loaded-file .layer-panel {
+    top: auto;
+  }
+
+  .range-back-button {
+    top: 82px;
+    right: 16px;
+  }
+
+  .view-tabs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .view-tab-heatmap {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .view-tab-stats {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .roamline-shell.is-stats .layer-panel {
+    top: calc(78px + env(safe-area-inset-top));
+    right: 16px;
+    bottom: auto;
+    left: 16px;
+    z-index: 4;
+    width: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    pointer-events: auto;
+  }
+
+  .roamline-shell.is-stats .layer-panel .view-switcher-box {
+    margin-top: 0;
+  }
+
+  .roamline-shell.is-stats .layer-panel .view-tabs {
+    margin-top: 0;
+  }
+
+  .stats-page {
+    inset: 0;
+    z-index: 3;
+    padding: calc(182px + env(safe-area-inset-top)) 17px calc(30px + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 0;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    will-change: transform;
+  }
+
+  .stats-page-heading {
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .stats-page-heading h2 {
+    font-size: 34px;
+  }
+
+  .stats-range-stamp {
+    width: 100%;
+  }
+
+  .stats-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stats-kpi {
+    min-height: 98px;
+    padding: 13px;
+  }
+
+  .stats-kpi:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .stats-kpi:nth-child(even) {
+    padding-left: 13px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .stats-kpi strong {
+    font-size: 19px;
+  }
+
+  .stats-section-heading {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stats-metric-switch {
+    width: 100%;
+  }
+
+  .stats-metric-switch button {
+    flex: 1;
+  }
+
+  .stats-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-detail-section + .stats-detail-section {
+    padding-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 0;
+  }
+
+  .country-stat-name {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .year-stat-row {
+    grid-template-columns: 0.55fr 0.45fr 0.9fr 0.55fr 0.85fr;
+    gap: 5px;
+    font-size: 9px;
+  }
+
+  .year-stat-header {
+    font-size: 7px;
+  }
+
+  .signature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 12px;
+  }
+
+  .stats-panel {
+    display: none;
+  }
+
+  .timeline-dock {
+    right: 16px;
+    bottom: 25px;
+    left: 16px;
+    width: auto;
+    padding: 12px 13px;
+    z-index: 3;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    opacity: 1;
+  }
+
+  .timeline-dock:hover,
+  .timeline-dock.is-visible {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .route-count {
+    display: none;
+  }
+
+  .privacy-note {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation: none !important;
+  }
+}

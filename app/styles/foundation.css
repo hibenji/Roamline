@@ -1,0 +1,46 @@
+:root {
+  --ink: #f7f3eb;
+  --muted: #9aa4b5;
+  --muted-strong: #c1c9d4;
+  --night: #080c15;
+  --panel: rgba(11, 17, 29, 0.72);
+  --panel-solid: rgba(13, 20, 33, 0.92);
+  --line: rgba(220, 229, 242, 0.13);
+  --line-strong: rgba(220, 229, 242, 0.24);
+  --orange: #ff806d;
+  --cream: #fff3c4;
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-ui: 'DM Sans', Arial, Helvetica, sans-serif;
+  --font-display: Georgia, 'Times New Roman', serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--night);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+@keyframes atmosphere-drift {
+  from {
+    transform: translate3d(-1.5%, -1%, 0) scale(0.98);
+  }
+  to {
+    transform: translate3d(1.5%, 1%, 0) scale(1.03);
+  }
+}

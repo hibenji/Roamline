@@ -10,11 +10,11 @@ Drop in a Timeline JSON file and explore it on a dark, rotatable 3D globe. See t
 
 - Load Google Maps Timeline JSON exports with drag-and-drop or a file picker.
 - Process timeline data locally in the browser, including large exports through a Web Worker.
-- Explore a MapLibre-powered 3D globe with route layers, visit points, and atmospheric styling.
+- Explore a MapLibre-powered 3D globe with route layers, heatmap activity, and atmospheric styling.
 - Switch between All activity, Replay, Heatmap, and Stats views.
 - Compare time spent and movement frequency in heatmap mode.
 - Filter the visible history by date range and activity type.
-- Inspect route segments and visited places directly on the map.
+- Inspect route segments directly on the map; visits appear in statistics and heatmap data.
 - Replay a timeline with scrubbing and adjustable playback speed.
 - View distance, active days, visits, countries, yearly trends, weekly rhythm, and movement modes.
 - Optionally connect nearby chronological route segments, including uninterrupted flight legs.
@@ -48,6 +48,8 @@ The token is only used by the browser for map tiles. Never put private credentia
 
 ```bash
 npm run lint
+npm run format:check
+npm run typecheck
 npm test
 npm run build
 ```
