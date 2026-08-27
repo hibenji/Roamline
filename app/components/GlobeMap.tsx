@@ -10,12 +10,13 @@ import type {
   FilterSpecification,
 } from 'maplibre-gl';
 import { MODE_LABELS, type ModeKey } from '../lib/modes';
+import { loadRuntimeConfig } from '../lib/runtime-config';
 import { DAY_MS, dateInputValue, startOfUtcDay } from '../lib/time';
 import type { NormalizedTimeline } from '../timeline';
 import {
   CONNECTED_ROUTE_LAYER_IDS,
   MAP_INTERACTIVE_LAYER_IDS,
-  MAP_STYLE,
+  mapStyleForToken,
   ROUTE_COLORS,
 } from '../map/config';
 import { boundsForTimeline, sequentialRouteData, sourceData } from '../map/data';
@@ -93,7 +94,10 @@ export default function GlobeMap({
 
     async function createMap() {
       if (!containerRef.current) return;
-      const maplibreModule = await import('maplibre-gl');
+      const [maplibreModule, runtimeConfig] = await Promise.all([
+        import('maplibre-gl'),
+        loadRuntimeConfig(),
+      ]);
       const maplibregl =
         'Map' in maplibreModule
           ? maplibreModule
@@ -102,7 +106,7 @@ export default function GlobeMap({
 
       const map = new maplibregl.Map({
         container: containerRef.current,
-        style: MAP_STYLE,
+        style: mapStyleForToken(runtimeConfig.mapboxAccessToken),
         center: [10, 40],
         zoom: 1.45,
         pitch: 0,

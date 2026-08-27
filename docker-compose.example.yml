@@ -5,6 +5,7 @@ services:
       - '7863:7863'
     environment:
       HOST: 0.0.0.0
+      MAPBOX_ACCESS_TOKEN: ${MAPBOX_ACCESS_TOKEN:-}
       PORT: 7863
       NODE_ENV: production
     restart: unless-stopped

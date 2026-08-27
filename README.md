@@ -39,10 +39,10 @@ Then open [http://localhost:7863](http://localhost:7863).
 Roamline works with the built-in CARTO fallback. To use a Mapbox dark basemap locally, add a public token to `.env.local`:
 
 ```bash
-VITE_MAPBOX_ACCESS_TOKEN=your_public_mapbox_token
+MAPBOX_ACCESS_TOKEN=your_public_mapbox_token
 ```
 
-The token is only used by the browser for map tiles. Never put private credentials or a personal timeline export in the repository.
+The server reads this value at runtime and exposes it to the browser only when the map initializes. Never put private credentials or a personal timeline export in the repository.
 
 ## Run with Docker
 
@@ -53,10 +53,24 @@ docker build -t roamline .
 docker run --publish 7863:7863 roamline
 ```
 
-The image uses the CARTO basemap fallback by default. To include an optional public Mapbox token at build time:
+The image uses the CARTO basemap fallback by default. Mapbox access is optional and uses a public browser token. The token is read from the container environment at request time, so it is not embedded in the image and does not require an image rebuild.
+
+For a local or self-hosted Compose deployment, create an ignored `.env` file beside the Compose file:
 
 ```bash
-docker build --build-arg VITE_MAPBOX_ACCESS_TOKEN=your_public_mapbox_token -t roamline .
+MAPBOX_ACCESS_TOKEN=your_public_mapbox_token
+```
+
+Then start the public image with the runtime value:
+
+```bash
+docker compose -f docker-compose.example.yml up -d
+```
+
+Without the `.env` file, the app uses CARTO. For a direct Docker run, pass the value at startup:
+
+```bash
+docker run --env MAPBOX_ACCESS_TOKEN=your_public_mapbox_token --publish 7863:7863 roamline
 ```
 
 The public image is used by the example Compose configuration:
@@ -65,7 +79,9 @@ The public image is used by the example Compose configuration:
 docker compose -f docker-compose.example.yml up -d
 ```
 
-The GitHub Actions workflow publishes `ghcr.io/hibenji/roamline:latest` after successful builds on `main`. The first publication may need to be changed to Public in the repository's GitHub Packages settings before it can be pulled anonymously.
+The GitHub Actions workflow publishes `ghcr.io/hibenji/roamline:latest` after successful builds on `main`. The first publication may need to be changed to Public in the repository's GitHub Packages settings before it can be pulled anonymously. Set `MAPBOX_ACCESS_TOKEN` in the environment of the service that deploys the image; no GitHub Actions secret is needed for the image build.
+
+The token is public by design because it is sent to the browser; restrict it to the appropriate Mapbox scopes and allowed URLs.
 
 ## Quality checks
 

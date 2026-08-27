@@ -9,10 +9,6 @@ RUN npm ci
 
 COPY . .
 
-# The token is optional; without it the app uses its CARTO basemap fallback.
-ARG VITE_MAPBOX_ACCESS_TOKEN
-ENV VITE_MAPBOX_ACCESS_TOKEN=${VITE_MAPBOX_ACCESS_TOKEN}
-
 RUN npm run build
 
 FROM node:22-alpine AS runner
