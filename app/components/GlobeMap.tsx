@@ -33,6 +33,17 @@ const ROUTE_COLORS: Record<ModeKey, string> = {
   other: '#a8b1c2',
 };
 
+const ROUTE_MODES = Object.keys(ROUTE_COLORS) as ModeKey[];
+const CONNECTED_ROUTE_LAYER_IDS = ROUTE_MODES.flatMap((startMode) =>
+  ROUTE_MODES.map((endMode) => `timeline-connected-route-${startMode}-${endMode}`),
+);
+const MAP_INTERACTIVE_LAYER_IDS = [
+  'timeline-visits',
+  'timeline-route-hit',
+  'timeline-route',
+  ...CONNECTED_ROUTE_LAYER_IDS,
+];
+
 const globeFadeEase = [0.22, 1, 0.36, 1] as const;
 
 const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN?.trim() ?? '';
@@ -234,7 +245,11 @@ function sequentialRouteData(timeline: NormalizedTimeline, selectedModes: ModeKe
       };
     })
     .sort((a, b) => a.startTime - b.startTime);
-  const features: Array<{ type: 'Feature'; geometry: { type: 'LineString'; coordinates: [number, number][] }; properties: { mode: ModeKey; start: number; end: number } }> = [];
+  const features: Array<{
+    type: 'Feature';
+    geometry: { type: 'LineString'; coordinates: [number, number][] };
+    properties: { mode: ModeKey; startMode: ModeKey; endMode: ModeKey; start: number; end: number };
+  }> = [];
 
   for (let index = 1; index < boundaries.length; index += 1) {
     const previous = boundaries[index - 1];
@@ -253,7 +268,13 @@ function sequentialRouteData(timeline: NormalizedTimeline, selectedModes: ModeKe
     features.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: [previous.end, current.start] },
-      properties: { mode: current.mode, start: previous.endTime, end: current.startTime },
+      properties: {
+        mode: current.mode,
+        startMode: previous.mode,
+        endMode: current.mode,
+        start: previous.endTime,
+        end: current.startTime,
+      },
     });
   }
 
@@ -343,10 +364,10 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
         map.addSource('timeline-heat', { type: 'geojson', data: emptyCollection });
         map.addSource('timeline-playback-route', { type: 'geojson', data: emptyCollection });
         map.addSource('timeline-playback-point', { type: 'geojson', data: emptyCollection });
-        map.addSource('timeline-connected-route', { type: 'geojson', data: emptyCollection });
+        map.addSource('timeline-connected-route', { type: 'geojson', lineMetrics: true, data: emptyCollection });
 
         const modeExpression: any = ['match', ['get', 'mode']];
-        for (const mode of Object.keys(ROUTE_COLORS) as ModeKey[]) modeExpression.push(mode, ROUTE_COLORS[mode]);
+        for (const mode of ROUTE_MODES) modeExpression.push(mode, ROUTE_COLORS[mode]);
         modeExpression.push(ROUTE_COLORS.other);
 
         map.addLayer({
@@ -363,13 +384,38 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: { 'line-color': modeExpression, 'line-width': 2.2, 'line-opacity': 0.82 },
         });
-        map.addLayer({
-          id: 'timeline-connected-route',
-          type: 'line',
-          source: 'timeline-connected-route',
-          layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': '#dbe4ec', 'line-width': 1.5, 'line-opacity': 0.42, 'line-dasharray': [1.2, 2.4] },
-        });
+        // Gradients are defined per layer, so split connectors by their endpoint modes.
+        for (const startMode of ROUTE_MODES) {
+          for (const endMode of ROUTE_MODES) {
+            const id = `timeline-connected-route-${startMode}-${endMode}`;
+            const paint: Record<string, unknown> = {
+              'line-color': ROUTE_COLORS[startMode],
+              'line-width': 1.5,
+              'line-opacity': 0.42,
+              'line-dasharray': [1.2, 2.4],
+            };
+            if (startMode !== endMode) {
+              paint['line-gradient'] = [
+                'interpolate',
+                ['linear'],
+                ['line-progress'],
+                0,
+                ROUTE_COLORS[startMode],
+                1,
+                ROUTE_COLORS[endMode],
+              ];
+            }
+
+            map.addLayer({
+              id,
+              type: 'line',
+              source: 'timeline-connected-route',
+              filter: ['all', ['==', ['get', 'startMode'], startMode], ['==', ['get', 'endMode'], endMode]],
+              layout: { 'line-cap': 'round', 'line-join': 'round' },
+              paint: paint as any,
+            });
+          }
+        }
         map.addLayer({
           id: 'timeline-route-hit',
           type: 'line',
@@ -450,12 +496,10 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
 
         const handleMapClick = (event: any) => {
           if (viewModeRef.current !== 'all') return;
-          const features = map.queryRenderedFeatures(event.point, {
-            layers: ['timeline-visits', 'timeline-route-hit', 'timeline-route', 'timeline-connected-route'],
-          });
+          const features = map.queryRenderedFeatures(event.point, { layers: MAP_INTERACTIVE_LAYER_IDS });
           const feature = features.find((candidate: any) => candidate.layer?.id === 'timeline-visits')
             ?? features.find((candidate: any) => candidate.layer?.id === 'timeline-route-hit' || candidate.layer?.id === 'timeline-route')
-            ?? features.find((candidate: any) => candidate.layer?.id === 'timeline-connected-route');
+            ?? features.find((candidate: any) => CONNECTED_ROUTE_LAYER_IDS.includes(candidate.layer?.id));
           if (!feature) {
             closeDetail();
             return;
@@ -489,9 +533,7 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
             map.getCanvas().style.cursor = '';
             return;
           }
-          const features = map.queryRenderedFeatures(event.point, {
-            layers: ['timeline-visits', 'timeline-route-hit', 'timeline-route', 'timeline-connected-route'],
-          });
+          const features = map.queryRenderedFeatures(event.point, { layers: MAP_INTERACTIVE_LAYER_IDS });
           map.getCanvas().style.cursor = features.length > 0 ? 'pointer' : '';
         };
 
@@ -546,7 +588,6 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     map.setFilter('timeline-route', modeFilter);
     map.setFilter('timeline-route-glow', modeFilter);
     map.setFilter('timeline-route-hit', modeFilter);
-    map.setFilter('timeline-connected-route', modeFilter);
     map.setFilter('timeline-heat-movement', modeFilter);
     map.setFilter('timeline-heat-dwell', modeFilter);
 
@@ -556,7 +597,9 @@ export default function GlobeMap({ timeline, viewMode, heatMode, selectedModes, 
     map.setLayoutProperty('timeline-route', 'visibility', routeVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-route-glow', 'visibility', routeVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-route-hit', 'visibility', routeVisible ? 'visible' : 'none');
-    map.setLayoutProperty('timeline-connected-route', 'visibility', routeVisible && connectSequential ? 'visible' : 'none');
+    for (const layerId of CONNECTED_ROUTE_LAYER_IDS) {
+      map.setLayoutProperty(layerId, 'visibility', routeVisible && connectSequential ? 'visible' : 'none');
+    }
     map.setLayoutProperty('timeline-playback-route', 'visibility', replayVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-playback-point', 'visibility', replayVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-heat-movement', 'visibility', heatVisible && heatMode === 'movement' ? 'visible' : 'none');
