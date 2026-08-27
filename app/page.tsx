@@ -70,6 +70,13 @@ function formatRangeDate(value: string, fallback: string) {
   return Number.isFinite(timestamp) ? formatDate(timestamp) : fallback;
 }
 
+function isValidDateInput(value: string) {
+  if (!value) return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
+}
+
 export default function Home() {
   const [timeline, setTimeline] = useState<NormalizedTimeline>(() => createDemoTimeline());
   const [viewMode, setViewMode] = useState<GlobeViewMode>('all');
@@ -79,6 +86,8 @@ export default function Home() {
   const [autoRotate, setAutoRotate] = useState(false);
   const [fromDate, setFromDate] = useState('2022-01-01');
   const [toDate, setToDate] = useState('');
+  const [draftFromDate, setDraftFromDate] = useState('2022-01-01');
+  const [draftToDate, setDraftToDate] = useState('');
   const [rangeFocusActive, setRangeFocusActive] = useState(false);
   const [previousRange, setPreviousRange] = useState<{ fromDate: string; toDate: string } | null>(null);
   const [playbackProgress, setPlaybackProgress] = useState(1);
@@ -188,6 +197,8 @@ export default function Home() {
     setPreviousRange({ fromDate, toDate });
     setFromDate(nextFromDate);
     setToDate(nextToDate);
+    setDraftFromDate(nextFromDate);
+    setDraftToDate(nextToDate);
     setRangeFocusActive(true);
     setIsReturningFromStats(viewMode === 'stats');
     setViewMode('all');
@@ -208,6 +219,8 @@ export default function Home() {
   function clearDateRange() {
     setFromDate('');
     setToDate('');
+    setDraftFromDate('');
+    setDraftToDate('');
     setRangeFocusActive(false);
     setPreviousRange(null);
   }
@@ -216,7 +229,23 @@ export default function Home() {
     if (previousRange) {
       setFromDate(previousRange.fromDate);
       setToDate(previousRange.toDate);
+      setDraftFromDate(previousRange.fromDate);
+      setDraftToDate(previousRange.toDate);
     }
+    setRangeFocusActive(false);
+    setPreviousRange(null);
+  }
+
+  function applyDateRangeInput(field: 'from' | 'to') {
+    const value = field === 'from' ? draftFromDate : draftToDate;
+    if (!isValidDateInput(value)) {
+      if (field === 'from') setDraftFromDate(fromDate);
+      else setDraftToDate(toDate);
+      return;
+    }
+
+    if (field === 'from') setFromDate(value);
+    else setToDate(value);
     setRangeFocusActive(false);
     setPreviousRange(null);
   }
@@ -251,6 +280,8 @@ export default function Home() {
     setLoadMessage('');
     setFromDate('2022-01-01');
     setToDate('');
+    setDraftFromDate('2022-01-01');
+    setDraftToDate('');
     setRangeFocusActive(false);
     setPreviousRange(null);
     setLayerPanelTop(null);
@@ -489,8 +520,8 @@ export default function Home() {
             </summary>
             <div className="range-popover">
               <div className="range-fields">
-                <label>From<input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setRangeFocusActive(false); setPreviousRange(null); }} /></label>
-                <label>To<input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setRangeFocusActive(false); setPreviousRange(null); }} /></label>
+                <label>From<input type="date" value={draftFromDate} onChange={(event) => setDraftFromDate(event.target.value)} onBlur={() => applyDateRangeInput('from')} /></label>
+                <label>To<input type="date" value={draftToDate} onChange={(event) => setDraftToDate(event.target.value)} onBlur={() => applyDateRangeInput('to')} /></label>
               </div>
               <div className="range-actions"><button type="button" onClick={clearDateRange}>Full timeline</button><span>Default: since 2022</span></div>
               {rangeError && <p className="range-message" role="alert">End date must be on or after the start date.</p>}
