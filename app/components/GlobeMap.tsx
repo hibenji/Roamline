@@ -44,6 +44,7 @@ type GlobeMapProps = {
 };
 
 const globeFadeEase = [0.22, 1, 0.36, 1] as const;
+const globeOrbitSpeed = 3;
 
 export default function GlobeMap({
   timeline,
@@ -333,11 +334,22 @@ export default function GlobeMap({
     if (!map || !hasLoadedRef.current || !autoRotate) return;
     let frame = 0;
     let last = performance.now();
+    const initialCenter = map.getCenter();
+    let longitude = initialCenter.lng;
+    let latitude = initialCenter.lat;
     const rotate = (now: number) => {
-      if (now - last > 70 && !map.isMoving()) {
-        map.rotateTo(map.getBearing() + 0.18, { duration: 0 });
-        last = now;
+      const elapsed = Math.min(now - last, 100);
+      last = now;
+
+      if (map.isMoving()) {
+        const center = map.getCenter();
+        longitude = center.lng;
+        latitude = center.lat;
+      } else {
+        longitude += (elapsed / 1000) * globeOrbitSpeed;
+        map.setCenter([longitude, latitude]);
       }
+
       frame = requestAnimationFrame(rotate);
     };
     frame = requestAnimationFrame(rotate);
@@ -408,7 +420,12 @@ export default function GlobeMap({
               style={{ left: selectedDetail.screenX, top: selectedDetail.screenY }}
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: [0.72, 1, 0.72], scale: [0.86, 1.16, 0.86] }}
-              exit={{ opacity: 0, scale: 0.6 }}
+              // Stop the pulse on exit so AnimatePresence can unmount the anchor.
+              exit={{
+                opacity: 0,
+                scale: 0.6,
+                transition: { duration: 0.18, ease: 'easeOut', repeat: 0 },
+              }}
               transition={{ duration: 1.8, ease: 'easeInOut', repeat: Infinity }}
               aria-hidden="true"
             />
