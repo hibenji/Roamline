@@ -75,8 +75,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<GlobeViewMode>('all');
   const [heatMode, setHeatMode] = useState<HeatViewMode>('dwell');
   const [selectedModes, setSelectedModes] = useState<ModeKey[]>(MODES.map((mode) => mode.key));
-  const [showVisits, setShowVisits] = useState(true);
-  const [connectSequential, setConnectSequential] = useState(false);
+  const [connectSequential, setConnectSequential] = useState(true);
   const [autoRotate, setAutoRotate] = useState(false);
   const [fromDate, setFromDate] = useState('2022-01-01');
   const [toDate, setToDate] = useState('');
@@ -92,6 +91,7 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [mapReady, setMapReady] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [layerPanelTop, setLayerPanelTop] = useState<number | null>(null);
   const [timelineDockHeight, setTimelineDockHeight] = useState<number | null>(null);
   const [isReturningFromStats, setIsReturningFromStats] = useState(false);
   const [restoredLayerPanelSnapshot, setRestoredLayerPanelSnapshot] = useState<{ panelHeight: number; headingHeight: number; settingsHeight: number } | null>(null);
@@ -125,7 +125,10 @@ export default function Home() {
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 760px)');
-    const handleChange = () => setIsMobileViewport(media.matches);
+    const handleChange = () => {
+      setIsMobileViewport(media.matches);
+      setLayerPanelTop(null);
+    };
     handleChange();
     media.addEventListener?.('change', handleChange);
     return () => media.removeEventListener?.('change', handleChange);
@@ -221,6 +224,11 @@ export default function Home() {
   function chooseView(nextMode: GlobeViewMode) {
     if (nextMode === 'stats' && viewMode !== 'stats') rememberLayerPanelSize();
     if (nextMode !== 'stats' && viewMode !== 'stats') setRestoredLayerPanelSnapshot(null);
+    if (nextMode === 'stats' || viewMode === 'stats') {
+      setLayerPanelTop(null);
+    } else if (isMobileViewport && nextMode !== viewMode && layerPanelRef.current) {
+      setLayerPanelTop(layerPanelRef.current.getBoundingClientRect().top);
+    }
     setIsReturningFromStats(viewMode === 'stats' && nextMode !== 'stats');
     setViewMode(nextMode);
     setIsPlaying(false);
@@ -245,10 +253,11 @@ export default function Home() {
     setToDate('');
     setRangeFocusActive(false);
     setPreviousRange(null);
+    setLayerPanelTop(null);
     setProgress(0);
     setIsReturningFromStats(viewMode === 'stats');
     setViewMode('all');
-    setConnectSequential(false);
+    setConnectSequential(true);
     progressRef.current = 1;
     setPlaybackProgress(1);
     setIsPlaying(false);
@@ -351,7 +360,6 @@ export default function Home() {
         viewMode={viewMode}
         heatMode={heatMode}
         selectedModes={selectedModes}
-        showVisits={showVisits}
         connectSequential={connectSequential}
         playbackProgress={playbackProgress}
         autoRotate={autoRotate}
@@ -407,13 +415,14 @@ export default function Home() {
       <motion.section
         ref={layerPanelRef}
         className="control-panel layer-panel"
-        layout
         initial={{ opacity: 0, y: 13 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ ...panelTransition, delay: isReturningFromStats ? 0 : 0.18, layout: isReturningFromStats ? statsReturnTransition : layerLayoutTransition }}
+        transition={{ ...panelTransition, delay: isReturningFromStats ? 0 : 0.18 }}
         style={{
           '--timeline-dock-height': timelineDockHeight === null ? undefined : `${timelineDockHeight}px`,
           height: !isMobileStats && restoredLayerPanelSnapshot !== null ? restoredLayerPanelSnapshot.panelHeight : undefined,
+          top: isMobileViewport && layerPanelTop !== null && !isMobileStats ? `${layerPanelTop}px` : undefined,
+          bottom: isMobileViewport && layerPanelTop !== null && !isMobileStats ? 'auto' : undefined,
         } as CSSProperties}
       >
         <motion.div
@@ -489,12 +498,23 @@ export default function Home() {
             </div>
           </details>
 
-          {viewMode === 'heatmap' && (
-            <div className="heat-switch" role="group" aria-label="Heatmap metric">
-              <button className={heatMode === 'dwell' ? 'is-active' : ''} onClick={() => setHeatMode('dwell')} type="button"><span className="heat-swatch dwell" />Time spent</button>
-              <button className={heatMode === 'movement' ? 'is-active' : ''} onClick={() => setHeatMode('movement')} type="button"><span className="heat-swatch movement" />Movement frequency</button>
-            </div>
-          )}
+          <AnimatePresence initial={false}>
+            {viewMode === 'heatmap' && (
+              <motion.div
+                className="heat-switch-drawer"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ height: { duration: 0.42, ease: motionEase }, opacity: { duration: 0.22, ease: 'linear' } }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div className="heat-switch" role="group" aria-label="Heatmap metric">
+                  <button className={heatMode === 'dwell' ? 'is-active' : ''} onClick={() => setHeatMode('dwell')} type="button"><span className="heat-swatch dwell" />Time spent</button>
+                  <button className={heatMode === 'movement' ? 'is-active' : ''} onClick={() => setHeatMode('movement')} type="button"><span className="heat-swatch movement" />Movement frequency</button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="filter-heading"><span>ACTIVITY</span><button type="button" onClick={() => setSelectedModes(allModesSelected ? [] : MODES.map((mode) => mode.key))}>{allModesSelected ? 'Clear' : 'All modes'}</button></div>
           <div className="mode-filters">
@@ -504,11 +524,6 @@ export default function Home() {
               </button>
             ))}
           </div>
-          <label className="toggle-row">
-            <span><span className="toggle-icon" aria-hidden="true">⌖</span> Show visited places</span>
-            <input type="checkbox" checked={showVisits} onChange={(event) => setShowVisits(event.target.checked)} />
-            <span className="toggle-track" aria-hidden="true"><span /></span>
-          </label>
           <label className="toggle-row">
             <span><span className="toggle-icon" aria-hidden="true">↝</span> Connect timeline points</span>
             <input type="checkbox" checked={connectSequential} onChange={(event) => setConnectSequential(event.target.checked)} />
@@ -525,7 +540,7 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <StatsView timeline={visibleTimeline} selectedModes={selectedModes} showVisits={showVisits} isVisible={viewMode === 'stats'} />
+      <StatsView timeline={visibleTimeline} selectedModes={selectedModes} isVisible={viewMode === 'stats'} />
 
       <motion.section className="stats-panel" aria-label="Timeline summary" initial={{ opacity: 0, y: 13 }} animate={{ opacity: 1, y: 0 }} transition={{ ...panelTransition, delay: 0.3 }}>
         <div className="stats-intro"><span className="eyebrow">THE LONG VIEW</span><strong>{formatDate(visibleTimeline.coverage.start)} <span>→</span> {formatDate(visibleTimeline.coverage.end)}</strong></div>

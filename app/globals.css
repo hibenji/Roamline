@@ -81,10 +81,6 @@ button {
   pointer-events: none;
 }
 
-.map-detail-anchor.visit {
-  background: #f1a08b;
-}
-
 .map-detail-popup {
   position: absolute;
   z-index: 3;

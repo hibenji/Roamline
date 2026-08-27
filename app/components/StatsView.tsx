@@ -8,7 +8,6 @@ import type { ModeKey, NormalizedTimeline } from '../timeline';
 type StatsViewProps = {
   timeline: NormalizedTimeline;
   selectedModes: ModeKey[];
-  showVisits: boolean;
   isVisible: boolean;
 };
 
@@ -103,9 +102,9 @@ function chartPoints(trend: TrendBucket[], metric: TrendMetric, chartWidth: numb
   return { max, left, right, top, bottom, plotWidth, plotHeight, step, points };
 }
 
-export default function StatsView({ timeline, selectedModes, showVisits, isVisible }: StatsViewProps) {
+export default function StatsView({ timeline, selectedModes, isVisible }: StatsViewProps) {
   const [trendMetric, setTrendMetric] = useState<TrendMetric>('days');
-  const stats = useMemo(() => deriveTimelineStats(timeline, selectedModes, showVisits), [timeline, selectedModes, showVisits]);
+  const stats = useMemo(() => deriveTimelineStats(timeline, selectedModes), [timeline, selectedModes]);
   const chart = useMemo(() => chartPoints(stats.trend, trendMetric, 820, 250), [stats.trend, trendMetric]);
   const maxWeekday = Math.max(1, ...stats.weekdayCounts.map((entry) => entry.count));
   const busiestWeekday = stats.weekdayCounts.reduce((best, entry) => entry.count > best.count ? entry : best, stats.weekdayCounts[0]);
@@ -137,7 +136,7 @@ export default function StatsView({ timeline, selectedModes, showVisits, isVisib
         <div className="stats-range-stamp">
           <span>ANALYZING</span>
           <strong>{formatDate(timeline.coverage.start)} <i>to</i> {formatDate(timeline.coverage.end)}</strong>
-          <small>{selectedModes.length} activity types · {showVisits ? 'visits included' : 'visits hidden'}</small>
+          <small>{selectedModes.length} activity types · visits included</small>
         </div>
       </motion.div>
 
