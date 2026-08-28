@@ -21,7 +21,7 @@ Drop in a Timeline JSON file and explore it on a dark, rotatable 3D globe. See t
 
 ## Privacy first
 
-Your timeline file is parsed in your browser and is not uploaded by Roamline. The app may request basemap tiles from Mapbox, but your Timeline JSON stays on your device.
+Your timeline file is parsed in your browser and is not uploaded by Roamline. The app may request basemap tiles from CARTO, but your Timeline JSON stays on your device.
 
 Personal exports should never be committed to this repository. The included first-load journey is synthetic and anonymized.
 
@@ -36,10 +36,10 @@ npm run dev
 
 Then open [http://localhost:7863](http://localhost:7863).
 
-To use a Mapbox dark basemap locally, add a public token to `.env.local`:
+To use CARTO Dark Matter basemap tiles locally, add your public basemap key to `.env.local`:
 
 ```bash
-MAPBOX_ACCESS_TOKEN=your_public_mapbox_token
+CARTO_BASEMAPS_API_KEY=your_public_carto_basemaps_key
 ```
 
 The server reads this value at runtime and exposes it to the browser only when the map initializes. Never put private credentials or a personal timeline export in the repository.
@@ -53,12 +53,12 @@ docker build -t roamline .
 docker run --publish 7863:7863 roamline
 ```
 
-Mapbox access is optional and uses a public browser token. Without a token, the globe renders without a tiled basemap. The token is read from the container environment at request time, so it is not embedded in the image and does not require an image rebuild.
+CARTO access is optional and uses a public browser key. Without a key, the globe renders without a tiled basemap. The key is read from the container environment at request time, so it is not embedded in the image and does not require an image rebuild.
 
 For a local or self-hosted Compose deployment, create an ignored `.env` file beside the Compose file:
 
 ```bash
-MAPBOX_ACCESS_TOKEN=your_public_mapbox_token
+CARTO_BASEMAPS_API_KEY=your_public_carto_basemaps_key
 ```
 
 Then start the public image with the runtime value:
@@ -70,7 +70,7 @@ docker compose -f docker-compose.example.yml up -d
 For a direct Docker run, pass the value at startup:
 
 ```bash
-docker run --env MAPBOX_ACCESS_TOKEN=your_public_mapbox_token --publish 7863:7863 roamline
+docker run --env CARTO_BASEMAPS_API_KEY=your_public_carto_basemaps_key --publish 7863:7863 roamline
 ```
 
 The public image is used by the example Compose configuration:
@@ -79,9 +79,9 @@ The public image is used by the example Compose configuration:
 docker compose -f docker-compose.example.yml up -d
 ```
 
-The GitHub Actions workflow publishes `ghcr.io/hibenji/roamline:latest` after successful builds on `main`. The first publication may need to be changed to Public in the repository's GitHub Packages settings before it can be pulled anonymously. Set `MAPBOX_ACCESS_TOKEN` in the environment of the service that deploys the image; no GitHub Actions secret is needed for the image build.
+The GitHub Actions workflow publishes `ghcr.io/hibenji/roamline:latest` after successful builds on `main`. The first publication may need to be changed to Public in the repository's GitHub Packages settings before it can be pulled anonymously. Set `CARTO_BASEMAPS_API_KEY` in the environment of the service that deploys the image; no GitHub Actions secret is needed for the image build.
 
-The token is public by design because it is sent to the browser; restrict it to the appropriate Mapbox scopes and allowed URLs.
+The key is public by design because it is sent to the browser; restrict it to the appropriate CARTO basemap permissions and allowed URLs.
 
 ## Quality checks
 

@@ -1,8 +1,8 @@
 export type RuntimeConfig = {
-  mapboxAccessToken: string;
+  cartoBasemapsApiKey: string;
 };
 
-const emptyRuntimeConfig: RuntimeConfig = { mapboxAccessToken: '' };
+const emptyRuntimeConfig: RuntimeConfig = { cartoBasemapsApiKey: '' };
 
 export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
   try {
@@ -12,9 +12,10 @@ export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
     const payload: unknown = await response.json();
     if (typeof payload !== 'object' || payload === null) return emptyRuntimeConfig;
 
-    const mapboxAccessToken = (payload as { mapboxAccessToken?: unknown }).mapboxAccessToken;
+    const cartoBasemapsApiKey = (payload as { cartoBasemapsApiKey?: unknown }).cartoBasemapsApiKey;
     return {
-      mapboxAccessToken: typeof mapboxAccessToken === 'string' ? mapboxAccessToken.trim() : '',
+      cartoBasemapsApiKey:
+        typeof cartoBasemapsApiKey === 'string' ? cartoBasemapsApiKey.trim() : '',
     };
   } catch {
     return emptyRuntimeConfig;

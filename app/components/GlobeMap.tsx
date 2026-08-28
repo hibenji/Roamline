@@ -16,7 +16,7 @@ import type { NormalizedTimeline } from '../timeline';
 import {
   CONNECTED_ROUTE_LAYER_IDS,
   MAP_INTERACTIVE_LAYER_IDS,
-  mapStyleForToken,
+  mapStyleForCartoKey,
   ROUTE_COLORS,
 } from '../map/config';
 import { boundsForTimeline, sequentialRouteData, sourceData } from '../map/data';
@@ -106,7 +106,7 @@ export default function GlobeMap({
 
       const map = new maplibregl.Map({
         container: containerRef.current,
-        style: mapStyleForToken(runtimeConfig.mapboxAccessToken),
+        style: mapStyleForCartoKey(runtimeConfig.cartoBasemapsApiKey),
         center: [10, 40],
         zoom: 1.45,
         pitch: 0,

@@ -23,35 +23,38 @@ export const MAP_INTERACTIVE_LAYER_IDS = [
   ...CONNECTED_ROUTE_LAYER_IDS,
 ];
 
-export function mapStyleForToken(mapboxAccessToken = ''): StyleSpecification {
-  const token = mapboxAccessToken.trim();
+export function mapStyleForCartoKey(cartoBasemapsApiKey = ''): StyleSpecification {
+  const apiKey = cartoBasemapsApiKey.trim();
 
   return {
     version: 8,
     sources:
-      token.length > 0
+      apiKey.length > 0
         ? {
-            mapboxDark: {
+            cartoDarkMatter: {
               type: 'raster' as const,
               tiles: [
-                `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}?access_token=${encodeURIComponent(token)}`,
+                `https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${encodeURIComponent(apiKey)}`,
               ],
               tileSize: 256,
-              attribution: '&copy; Mapbox &copy; OpenStreetMap',
+              attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             },
           }
         : {},
     layers:
-      token.length > 0
+      apiKey.length > 0
         ? [
             {
               id: 'basemap',
               type: 'raster' as const,
-              source: 'mapboxDark',
+              source: 'cartoDarkMatter',
               paint: {
-                'raster-opacity': 0.78,
-                'raster-saturation': -0.3,
-                'raster-contrast': 0.12,
+                'raster-opacity': 0.84,
+                'raster-brightness-min': 0.03,
+                'raster-brightness-max': 0.68,
+                'raster-saturation': -0.55,
+                'raster-contrast': -0.05,
               },
             },
           ]
