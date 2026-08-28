@@ -21,7 +21,7 @@ Drop in a Timeline JSON file and explore it on a dark, rotatable 3D globe. See t
 
 ## Privacy first
 
-Your timeline file is parsed in your browser and is not uploaded by Roamline. The app may request basemap tiles from Mapbox or its CARTO fallback, but your Timeline JSON stays on your device.
+Your timeline file is parsed in your browser and is not uploaded by Roamline. The app may request basemap tiles from Mapbox, but your Timeline JSON stays on your device.
 
 Personal exports should never be committed to this repository. The included first-load journey is synthetic and anonymized.
 
@@ -36,7 +36,7 @@ npm run dev
 
 Then open [http://localhost:7863](http://localhost:7863).
 
-Roamline works with the built-in CARTO fallback. To use a Mapbox dark basemap locally, add a public token to `.env.local`:
+To use a Mapbox dark basemap locally, add a public token to `.env.local`:
 
 ```bash
 MAPBOX_ACCESS_TOKEN=your_public_mapbox_token
@@ -53,7 +53,7 @@ docker build -t roamline .
 docker run --publish 7863:7863 roamline
 ```
 
-The image uses the CARTO basemap fallback by default. Mapbox access is optional and uses a public browser token. The token is read from the container environment at request time, so it is not embedded in the image and does not require an image rebuild.
+Mapbox access is optional and uses a public browser token. Without a token, the globe renders without a tiled basemap. The token is read from the container environment at request time, so it is not embedded in the image and does not require an image rebuild.
 
 For a local or self-hosted Compose deployment, create an ignored `.env` file beside the Compose file:
 
@@ -67,7 +67,7 @@ Then start the public image with the runtime value:
 docker compose -f docker-compose.example.yml up -d
 ```
 
-Without the `.env` file, the app uses CARTO. For a direct Docker run, pass the value at startup:
+For a direct Docker run, pass the value at startup:
 
 ```bash
 docker run --env MAPBOX_ACCESS_TOKEN=your_public_mapbox_token --publish 7863:7863 roamline
