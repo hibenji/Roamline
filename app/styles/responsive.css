@@ -1,13 +1,15 @@
-@media (max-width: 1100px) {
+@media (max-width: 1400px) {
   .timeline-dock {
     right: 30px;
     bottom: 145px;
     left: 416px;
     width: auto;
     min-width: 0;
-    transform: none;
+    translate: none;
   }
+}
 
+@media (max-width: 1100px) {
   .stats-panel {
     grid-template-columns: 1.6fr repeat(3, 0.8fr);
   }
@@ -209,6 +211,7 @@
     bottom: 25px;
     left: 16px;
     width: auto;
+    translate: none;
     padding: 12px 13px;
     z-index: 3;
     border: 0;
