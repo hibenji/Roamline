@@ -97,7 +97,7 @@ export default function GlobeMap({
       const [maplibreModule, runtimeConfig, maplibreWorkerModule] = await Promise.all([
         import('maplibre-gl'),
         loadRuntimeConfig(),
-        import('maplibre-gl/dist/maplibre-gl-worker.mjs?url'),
+        import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'),
       ]);
       const maplibregl =
         'Map' in maplibreModule
