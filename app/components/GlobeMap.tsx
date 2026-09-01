@@ -94,15 +94,18 @@ export default function GlobeMap({
 
     async function createMap() {
       if (!containerRef.current) return;
-      const [maplibreModule, runtimeConfig] = await Promise.all([
+      const [maplibreModule, runtimeConfig, maplibreWorkerModule] = await Promise.all([
         import('maplibre-gl'),
         loadRuntimeConfig(),
+        import('maplibre-gl/dist/maplibre-gl-worker.mjs?url'),
       ]);
       const maplibregl =
         'Map' in maplibreModule
           ? maplibreModule
           : (maplibreModule as unknown as { default: typeof maplibreModule }).default;
       if (disposed || !containerRef.current) return;
+
+      maplibregl.setWorkerUrl(maplibreWorkerModule.default);
 
       const map = new maplibregl.Map({
         container: containerRef.current,
