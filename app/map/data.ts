@@ -3,6 +3,19 @@ import type { ModeKey } from '../lib/modes';
 import type { NormalizedTimeline, Point } from '../timeline';
 import { emptyCollection } from './config';
 
+export function recordedPointData(timeline: NormalizedTimeline) {
+  return {
+    type: 'FeatureCollection' as const,
+    features: timeline.detailedRoutes.features.flatMap((route) =>
+      route.geometry.coordinates.map((coordinate) => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: coordinate },
+        properties: { mode: route.properties.mode },
+      })),
+    ),
+  };
+}
+
 export function sourceData(
   timeline: NormalizedTimeline,
   playbackProgress: number,
@@ -139,8 +152,8 @@ export function sequentialRouteData(timeline: NormalizedTimeline, selectedModes:
 
 export function boundsForTimeline(timeline: NormalizedTimeline) {
   const points =
-    timeline.routes.features.length > 0
-      ? timeline.routes.features.flatMap((feature) => feature.geometry.coordinates)
+    timeline.detailedRoutes.features.length > 0
+      ? timeline.detailedRoutes.features.flatMap((feature) => feature.geometry.coordinates)
       : timeline.visits.features.map((feature) => feature.geometry.coordinates);
   const first = points[0];
   if (!first) return undefined;

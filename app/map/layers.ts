@@ -4,10 +4,18 @@ import type {
   LineLayerSpecification,
   Map as MapLibreMap,
 } from 'maplibre-gl';
-import { ROUTE_COLORS, ROUTE_MODES, emptyCollection } from './config';
+import {
+  DETAIL_ROUTE_MIN_ZOOM,
+  PLACE_VISIT_MIN_ZOOM,
+  RECORDED_POINT_MIN_ZOOM,
+  ROUTE_COLORS,
+  ROUTE_MODES,
+  emptyCollection,
+} from './config';
 
 export function addTimelineSourcesAndLayers(map: MapLibreMap) {
   map.addSource('timeline-routes', { type: 'geojson', data: emptyCollection });
+  map.addSource('timeline-routes-detail', { type: 'geojson', data: emptyCollection });
   map.addSource('timeline-heat', { type: 'geojson', data: emptyCollection });
   map.addSource('timeline-playback-route', { type: 'geojson', data: emptyCollection });
   map.addSource('timeline-playback-point', { type: 'geojson', data: emptyCollection });
@@ -28,6 +36,7 @@ export function addTimelineSourcesAndLayers(map: MapLibreMap) {
     id: 'timeline-route-glow',
     type: 'line',
     source: 'timeline-routes',
+    maxzoom: DETAIL_ROUTE_MIN_ZOOM,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: {
       'line-color': modeExpression,
@@ -40,6 +49,33 @@ export function addTimelineSourcesAndLayers(map: MapLibreMap) {
     id: 'timeline-route',
     type: 'line',
     source: 'timeline-routes',
+    maxzoom: DETAIL_ROUTE_MIN_ZOOM,
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': modeExpression,
+      'line-width': 2.2,
+      'line-opacity': 0.82,
+    },
+  });
+
+  map.addLayer({
+    id: 'timeline-route-detail-glow',
+    type: 'line',
+    source: 'timeline-routes-detail',
+    minzoom: DETAIL_ROUTE_MIN_ZOOM,
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': modeExpression,
+      'line-width': 8,
+      'line-opacity': 0.1,
+      'line-blur': 5,
+    },
+  });
+  map.addLayer({
+    id: 'timeline-route-detail',
+    type: 'line',
+    source: 'timeline-routes-detail',
+    minzoom: DETAIL_ROUTE_MIN_ZOOM,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: {
       'line-color': modeExpression,
@@ -89,8 +125,67 @@ export function addTimelineSourcesAndLayers(map: MapLibreMap) {
     id: 'timeline-route-hit',
     type: 'line',
     source: 'timeline-routes',
+    maxzoom: DETAIL_ROUTE_MIN_ZOOM,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: { 'line-color': '#ffffff', 'line-width': 14, 'line-opacity': 0.001 },
+  });
+  map.addLayer({
+    id: 'timeline-route-detail-hit',
+    type: 'line',
+    source: 'timeline-routes-detail',
+    minzoom: DETAIL_ROUTE_MIN_ZOOM,
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#ffffff', 'line-width': 14, 'line-opacity': 0.001 },
+  });
+  map.addSource('timeline-recorded-points', { type: 'geojson', data: emptyCollection });
+  map.addLayer({
+    id: 'timeline-recorded-points',
+    type: 'circle',
+    source: 'timeline-recorded-points',
+    minzoom: RECORDED_POINT_MIN_ZOOM,
+    paint: {
+      'circle-color': modeExpression,
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        RECORDED_POINT_MIN_ZOOM,
+        2,
+        15,
+        3.5,
+        18,
+        5,
+      ],
+      'circle-opacity': 0.72,
+      'circle-stroke-color': '#101522',
+      'circle-stroke-width': 0.8,
+      'circle-stroke-opacity': 0.78,
+    },
+  });
+  map.addSource('timeline-visits', { type: 'geojson', data: emptyCollection });
+  map.addLayer({
+    id: 'timeline-visits',
+    type: 'circle',
+    source: 'timeline-visits',
+    minzoom: PLACE_VISIT_MIN_ZOOM,
+    paint: {
+      'circle-color': '#fff3c4',
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        PLACE_VISIT_MIN_ZOOM,
+        4.5,
+        12,
+        6,
+        18,
+        8,
+      ],
+      'circle-opacity': 0.92,
+      'circle-stroke-color': '#ff806d',
+      'circle-stroke-width': 2,
+      'circle-stroke-opacity': 0.95,
+    },
   });
   map.addLayer({
     id: 'timeline-playback-route',

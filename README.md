@@ -15,6 +15,7 @@ Drop in a Timeline JSON file and explore it on a dark, rotatable 3D globe. See t
 - Compare time spent and movement frequency in heatmap mode.
 - Filter the visible history by date range and activity type.
 - Inspect route segments directly on the map; visits appear in statistics and heatmap data.
+- Zoom in for full-resolution route geometry, confirmed place markers, and recorded movement points.
 - Replay a timeline with scrubbing and adjustable playback speed.
 - View distance, active days, visits, countries, yearly trends, weekly rhythm, and movement modes.
 - Optionally connect nearby chronological route segments, including uninterrupted flight legs.

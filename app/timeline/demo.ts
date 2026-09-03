@@ -141,6 +141,7 @@ export function createDemoTimeline(): NormalizedTimeline {
       end: Date.parse('2024-04-15T08:00:00Z'),
     },
     routes: { type: 'FeatureCollection', features: routes },
+    detailedRoutes: { type: 'FeatureCollection', features: routes },
     visits: { type: 'FeatureCollection', features: visits },
     heatPoints: { type: 'FeatureCollection', features: heatPoints },
     heatSamples,

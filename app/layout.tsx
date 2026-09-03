@@ -5,7 +5,14 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Roamline — Your private location atlas',
   description:
-    'Explore your Google Maps Timeline as a 3D globe, replay, and heatmap. Your location history stays in your browser.',
+    'Explore your Google Maps Timeline JSON export as a 3D globe, replay, and heatmap. Your location history stays in your browser.',
+  keywords: [
+    'Google Maps JSON export',
+    'Google Maps Timeline export',
+    'location history map',
+    'travel timeline',
+    '3D globe',
+  ],
   icons: {
     icon: '/favicon.svg',
   },

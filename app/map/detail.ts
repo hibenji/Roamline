@@ -8,8 +8,10 @@ export type MapDetail = {
   placement: 'above' | 'below';
   start: number;
   end: number;
+  kind?: 'route' | 'visit';
   mode?: ModeKey;
   distanceMeters?: number;
+  durationMinutes?: number;
 };
 
 export function finiteNumber(value: unknown): number | undefined {
@@ -40,6 +42,13 @@ export function formatDetailDistance(meters?: number) {
   if (!Number.isFinite(meters) || !meters || meters <= 0) return 'Not available';
   if (meters < 1000) return `${Math.round(meters)} m`;
   return `${(meters / 1000).toFixed(meters >= 100_000 ? 0 : 1)} km`;
+}
+
+export function formatDetailDuration(minutes?: number) {
+  if (!Number.isFinite(minutes) || !minutes || minutes <= 0) return 'Not available';
+  if (minutes < 60) return `${Math.round(minutes)} min`;
+  const hours = minutes / 60;
+  return `${hours.toFixed(hours >= 10 ? 0 : 1)} hrs`;
 }
 
 export function positionForDetail(map: MapLibreMap, coordinate: [number, number]) {

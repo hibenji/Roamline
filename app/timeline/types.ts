@@ -58,6 +58,7 @@ export type TimelineCollection<T> = {
 export type NormalizedTimeline = {
   coverage: { start: number; end: number };
   routes: TimelineCollection<LineFeature>;
+  detailedRoutes: TimelineCollection<LineFeature>;
   visits: TimelineCollection<PointFeature<VisitProperties>>;
   heatPoints: TimelineCollection<PointFeature<HeatProperties>>;
   heatSamples: HeatSample[];

@@ -89,6 +89,26 @@ describe('timeline normalizer', () => {
     );
   });
 
+  it('keeps full-resolution route geometry for zoomed map detail', () => {
+    const start = Date.parse('2024-01-01T00:00:00Z');
+    const pointCount = 52001;
+    const timeline = normalizeTimeline({
+      semanticSegments: [
+        {
+          startTime: new Date(start).toISOString(),
+          endTime: new Date(start + (pointCount - 1) * 60_000).toISOString(),
+          timelinePath: Array.from({ length: pointCount }, (_, index) => ({
+            point: { latitude: 48 + index * 0.000001, longitude: 16 },
+            time: new Date(start + index * 60_000).toISOString(),
+          })),
+        },
+      ],
+    });
+
+    expect(timeline.detailedRoutes.features[0].geometry.coordinates).toHaveLength(pointCount);
+    expect(timeline.routes.features[0].geometry.coordinates.length).toBeLessThan(pointCount);
+  });
+
   it('creates a self-contained synthetic demo without private fixture data', () => {
     const demo = createDemoTimeline();
     expect(demo.routes.features.length).toBeGreaterThan(1);
@@ -108,6 +128,7 @@ describe('timeline normalizer', () => {
       ),
     ).toBe(true);
     expect(filtered.routes.features).toHaveLength(3);
+    expect(filtered.detailedRoutes.features).toHaveLength(3);
     expect(filtered.visits.features).toHaveLength(1);
     expect(filtered.stats.visitCount).toBe(1);
     expect(filtered.heatPoints.features.length).toBeGreaterThan(0);

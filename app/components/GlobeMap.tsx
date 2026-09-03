@@ -15,14 +15,17 @@ import { DAY_MS, dateInputValue, startOfUtcDay } from '../lib/time';
 import type { NormalizedTimeline } from '../timeline';
 import {
   CONNECTED_ROUTE_LAYER_IDS,
+  DETAIL_ROUTE_MIN_ZOOM,
   MAP_INTERACTIVE_LAYER_IDS,
   mapStyleForCartoKey,
+  RECORDED_POINT_MIN_ZOOM,
   ROUTE_COLORS,
 } from '../map/config';
-import { boundsForTimeline, sequentialRouteData, sourceData } from '../map/data';
+import { boundsForTimeline, recordedPointData, sequentialRouteData, sourceData } from '../map/data';
 import {
   finiteNumber,
   formatDetailDistance,
+  formatDetailDuration,
   formatDetailRange,
   positionForDetail,
   type MapDetail,
@@ -62,7 +65,10 @@ export default function GlobeMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const hasLoadedRef = useRef(false);
   const initialFitRef = useRef(false);
+  const timelineRef = useRef(timeline);
   const timelineIdentityRef = useRef(timeline);
+  const detailedRoutesLoadedRef = useRef(false);
+  const recordedPointsLoadedRef = useRef(false);
   const viewModeRef = useRef(viewMode);
   const selectedAnchorRef = useRef<[number, number] | null>(null);
   const onFocusRangeRef = useRef(onFocusRange);
@@ -85,6 +91,10 @@ export default function GlobeMap({
   useEffect(() => {
     onFocusRangeRef.current = onFocusRange;
   }, [onFocusRange]);
+
+  useEffect(() => {
+    timelineRef.current = timeline;
+  }, [timeline]);
 
   useEffect(() => {
     let disposed = false;
@@ -152,6 +162,25 @@ export default function GlobeMap({
         if (disposed) return;
         addTimelineSourcesAndLayers(map);
 
+        const loadZoomDetail = () => {
+          const currentTimeline = timelineRef.current;
+          if (map.getZoom() >= DETAIL_ROUTE_MIN_ZOOM && !detailedRoutesLoadedRef.current) {
+            const detailRouteSource = map.getSource('timeline-routes-detail') as
+              GeoJSONSource | undefined;
+            detailRouteSource?.setData(
+              currentTimeline.detailedRoutes as unknown as GeoJSON.GeoJSON,
+            );
+            detailedRoutesLoadedRef.current = true;
+          }
+          if (map.getZoom() >= RECORDED_POINT_MIN_ZOOM && !recordedPointsLoadedRef.current) {
+            const recordedPointSource = map.getSource('timeline-recorded-points') as
+              GeoJSONSource | undefined;
+            recordedPointSource?.setData(recordedPointData(currentTimeline));
+            recordedPointsLoadedRef.current = true;
+          }
+        };
+        map.on('zoom', loadZoomDetail);
+
         const syncDetailPosition = () => {
           const coordinate = selectedAnchorRef.current;
           if (!coordinate) return;
@@ -172,9 +201,14 @@ export default function GlobeMap({
           });
           const feature =
             features.find(
+              (candidate: MapGeoJSONFeature) => candidate.layer?.id === 'timeline-visits',
+            ) ??
+            features.find(
               (candidate: MapGeoJSONFeature) =>
                 candidate.layer?.id === 'timeline-route-hit' ||
-                candidate.layer?.id === 'timeline-route',
+                candidate.layer?.id === 'timeline-route' ||
+                candidate.layer?.id === 'timeline-route-detail-hit' ||
+                candidate.layer?.id === 'timeline-route-detail',
             ) ??
             features.find((candidate: MapGeoJSONFeature) =>
               CONNECTED_ROUTE_LAYER_IDS.includes(candidate.layer?.id ?? ''),
@@ -185,6 +219,7 @@ export default function GlobeMap({
           }
 
           const properties = feature.properties ?? {};
+          const kind = feature.layer?.id === 'timeline-visits' ? 'visit' : 'route';
           const coordinate = event.lngLat.toArray() as [number, number];
           const start = finiteNumber(properties.start) ?? Number.NaN;
           const end = finiteNumber(properties.end) ?? start;
@@ -199,8 +234,10 @@ export default function GlobeMap({
             coordinate,
             start,
             end,
+            kind,
             mode,
             distanceMeters: finiteNumber(properties.distanceMeters),
+            durationMinutes: finiteNumber(properties.durationMinutes),
             ...position,
           });
         };
@@ -226,6 +263,7 @@ export default function GlobeMap({
 
         hasLoadedRef.current = true;
         setIsMapLoaded(true);
+        loadZoomDetail();
         onMapReady?.();
       });
     }
@@ -239,6 +277,8 @@ export default function GlobeMap({
       mapRef.current?.remove();
       mapRef.current = null;
       hasLoadedRef.current = false;
+      detailedRoutesLoadedRef.current = false;
+      recordedPointsLoadedRef.current = false;
       setIsMapLoaded(false);
     };
   }, [onMapReady]);
@@ -250,15 +290,30 @@ export default function GlobeMap({
     if (timelineIdentityRef.current !== timeline) {
       timelineIdentityRef.current = timeline;
       initialFitRef.current = false;
+      detailedRoutesLoadedRef.current = false;
+      recordedPointsLoadedRef.current = false;
     }
 
     const routeSource = map.getSource('timeline-routes') as GeoJSONSource | undefined;
+    const detailRouteSource = map.getSource('timeline-routes-detail') as GeoJSONSource | undefined;
+    const visitSource = map.getSource('timeline-visits') as GeoJSONSource | undefined;
     const heatSource = map.getSource('timeline-heat') as GeoJSONSource | undefined;
     const replayRouteSource = map.getSource('timeline-playback-route') as GeoJSONSource | undefined;
     const replayPointSource = map.getSource('timeline-playback-point') as GeoJSONSource | undefined;
     const connectedRouteSource = map.getSource('timeline-connected-route') as
       GeoJSONSource | undefined;
     routeSource?.setData(timeline.routes as unknown as GeoJSON.GeoJSON);
+    visitSource?.setData(timeline.visits as unknown as GeoJSON.GeoJSON);
+    if (map.getZoom() >= DETAIL_ROUTE_MIN_ZOOM) {
+      detailRouteSource?.setData(timeline.detailedRoutes as unknown as GeoJSON.GeoJSON);
+      detailedRoutesLoadedRef.current = true;
+    }
+    const recordedPointSource = map.getSource('timeline-recorded-points') as
+      GeoJSONSource | undefined;
+    if (map.getZoom() >= RECORDED_POINT_MIN_ZOOM) {
+      recordedPointSource?.setData(recordedPointData(timeline));
+      recordedPointsLoadedRef.current = true;
+    }
     heatSource?.setData(timeline.heatPoints as unknown as GeoJSON.GeoJSON);
     replayRouteSource?.setData(playbackSources.route as unknown as GeoJSON.GeoJSON);
     replayPointSource?.setData(playbackSources.point as unknown as GeoJSON.GeoJSON);
@@ -271,6 +326,10 @@ export default function GlobeMap({
     map.setFilter('timeline-route', modeFilter);
     map.setFilter('timeline-route-glow', modeFilter);
     map.setFilter('timeline-route-hit', modeFilter);
+    map.setFilter('timeline-route-detail', modeFilter);
+    map.setFilter('timeline-route-detail-glow', modeFilter);
+    map.setFilter('timeline-route-detail-hit', modeFilter);
+    map.setFilter('timeline-recorded-points', modeFilter);
     map.setFilter('timeline-heat-movement', modeFilter);
     map.setFilter('timeline-heat-dwell', modeFilter);
 
@@ -280,6 +339,23 @@ export default function GlobeMap({
     map.setLayoutProperty('timeline-route', 'visibility', routeVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-route-glow', 'visibility', routeVisible ? 'visible' : 'none');
     map.setLayoutProperty('timeline-route-hit', 'visibility', routeVisible ? 'visible' : 'none');
+    map.setLayoutProperty('timeline-route-detail', 'visibility', routeVisible ? 'visible' : 'none');
+    map.setLayoutProperty(
+      'timeline-route-detail-glow',
+      'visibility',
+      routeVisible ? 'visible' : 'none',
+    );
+    map.setLayoutProperty(
+      'timeline-route-detail-hit',
+      'visibility',
+      routeVisible ? 'visible' : 'none',
+    );
+    map.setLayoutProperty(
+      'timeline-recorded-points',
+      'visibility',
+      routeVisible ? 'visible' : 'none',
+    );
+    map.setLayoutProperty('timeline-visits', 'visibility', routeVisible ? 'visible' : 'none');
     for (const layerId of CONNECTED_ROUTE_LAYER_IDS) {
       map.setLayoutProperty(
         layerId,
@@ -404,10 +480,18 @@ export default function GlobeMap({
     onFocusRangeRef.current?.(fromDate, toDate);
   }
 
-  const detailTitle = selectedDetail ? `${MODE_LABELS[selectedDetail.mode ?? 'other']} route` : '';
-  const detailMetricValue = selectedDetail
-    ? formatDetailDistance(selectedDetail.distanceMeters)
-    : '';
+  const detailTitle =
+    selectedDetail?.kind === 'visit'
+      ? 'Visited place'
+      : selectedDetail
+        ? `${MODE_LABELS[selectedDetail.mode ?? 'other']} route`
+        : '';
+  const detailMetricValue =
+    selectedDetail?.kind === 'visit'
+      ? formatDetailDuration(selectedDetail.durationMinutes)
+      : selectedDetail
+        ? formatDetailDistance(selectedDetail.distanceMeters)
+        : '';
 
   return (
     <div className="globe-layer">
@@ -463,14 +547,16 @@ export default function GlobeMap({
               >
                 ×
               </button>
-              <span className="map-detail-type">ROUTE SEGMENT</span>
+              <span className="map-detail-type">
+                {selectedDetail.kind === 'visit' ? 'VISITED PLACE' : 'ROUTE SEGMENT'}
+              </span>
               <h3>{detailTitle}</h3>
               <p className="map-detail-time">
                 {formatDetailRange(selectedDetail.start, selectedDetail.end)}
               </p>
               <div className="map-detail-stats">
                 <span>
-                  <small>DISTANCE</small>
+                  <small>{selectedDetail.kind === 'visit' ? 'TIME SPENT' : 'DISTANCE'}</small>
                   <strong>{detailMetricValue}</strong>
                 </span>
                 <span>

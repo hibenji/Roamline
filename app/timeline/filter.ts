@@ -16,6 +16,9 @@ export function filterTimelineByDateRange(
   const routes = timeline.routes.features.filter(
     (route) => route.properties.end >= start && route.properties.start <= end,
   );
+  const detailedRoutes = timeline.detailedRoutes.features.filter(
+    (route) => route.properties.end >= start && route.properties.start <= end,
+  );
   const visits = timeline.visits.features
     .filter((visit) => visit.properties.end >= start && visit.properties.start <= end)
     .map((visit) => ({
@@ -51,7 +54,11 @@ export function filterTimelineByDateRange(
     (total, route) => total + route.geometry.coordinates.length,
     0,
   );
-  const routeDistance = routes.reduce(
+  const detailedRoutePointCount = detailedRoutes.reduce(
+    (total, route) => total + route.geometry.coordinates.length,
+    0,
+  );
+  const routeDistance = detailedRoutes.reduce(
     (total, route) =>
       total + (route.properties.distanceMeters ?? lineDistance(route.geometry.coordinates)),
     0,
@@ -72,6 +79,7 @@ export function filterTimelineByDateRange(
     ...timeline,
     coverage: { start: coverageStart, end: coverageEnd },
     routes: { type: 'FeatureCollection', features: routes },
+    detailedRoutes: { type: 'FeatureCollection', features: detailedRoutes },
     visits: { type: 'FeatureCollection', features: visits },
     heatPoints: { type: 'FeatureCollection', features: heatPoints },
     heatSamples,
@@ -80,7 +88,7 @@ export function filterTimelineByDateRange(
       activeDays,
       distanceMeters: routeDistance || playbackDistance,
       visitCount: visits.length,
-      routePointCount,
+      routePointCount: detailedRoutePointCount || routePointCount,
       hotspots,
     },
   };

@@ -17,9 +17,16 @@ export const CONNECTED_ROUTE_LAYER_IDS = ROUTE_MODES.flatMap((startMode) =>
   ROUTE_MODES.map((endMode) => `timeline-connected-route-${startMode}-${endMode}`),
 );
 
+export const DETAIL_ROUTE_MIN_ZOOM = 5.5;
+export const PLACE_VISIT_MIN_ZOOM = 8.5;
+export const RECORDED_POINT_MIN_ZOOM = 11.5;
+
 export const MAP_INTERACTIVE_LAYER_IDS = [
   'timeline-route-hit',
   'timeline-route',
+  'timeline-route-detail-hit',
+  'timeline-route-detail',
+  'timeline-visits',
   ...CONNECTED_ROUTE_LAYER_IDS,
 ];
 

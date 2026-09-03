@@ -413,14 +413,30 @@ export function normalizeTimeline(payload: unknown): NormalizedTimeline {
   }
 
   const renderRoutes: LineFeature[] = [];
+  const detailedRoutes: LineFeature[] = [];
   let renderPointCount = 0;
   for (const path of paths) {
+    const routePoints = dedupePoints(path.points);
     const visiblePoints = decimate(
-      dedupePoints(path.points),
+      routePoints,
       Math.max(2, Math.floor(MAX_ROUTE_POINTS / Math.max(1, paths.length))),
     );
     renderPointCount += path.points.length;
     if (visiblePoints.length < 2) continue;
+    const properties = {
+      mode: path.mode ?? 'other',
+      start: path.start ?? routePoints[0].time,
+      end: path.end ?? routePoints[routePoints.length - 1].time,
+      distanceMeters: path.distanceMeters,
+    };
+    detailedRoutes.push({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: routePoints.map((point) => [point.lng, point.lat]),
+      },
+      properties,
+    });
     renderRoutes.push({
       type: 'Feature',
       geometry: {
@@ -428,10 +444,9 @@ export function normalizeTimeline(payload: unknown): NormalizedTimeline {
         coordinates: visiblePoints.map((point) => [point.lng, point.lat]),
       },
       properties: {
-        mode: path.mode ?? 'other',
+        ...properties,
         start: path.start ?? visiblePoints[0].time,
         end: path.end ?? visiblePoints[visiblePoints.length - 1].time,
-        distanceMeters: path.distanceMeters,
       },
     });
   }
@@ -498,6 +513,7 @@ export function normalizeTimeline(payload: unknown): NormalizedTimeline {
       end: Number.isFinite(end) ? end : Date.now(),
     },
     routes: { type: 'FeatureCollection', features: renderRoutes },
+    detailedRoutes: { type: 'FeatureCollection', features: detailedRoutes },
     visits: {
       type: 'FeatureCollection',
       features: visits.slice(0, MAX_VISITS).map((visit) => ({
