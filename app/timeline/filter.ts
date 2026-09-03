@@ -33,7 +33,12 @@ export function filterTimelineByDateRange(
         ),
       },
     }));
-  const playback = timeline.playback.filter((point) => point.time >= start && point.time <= end);
+  const detailedPlayback = timeline.detailedPlayback.filter(
+    (point) => point.time >= start && point.time <= end,
+  );
+  const useDetailedPlayback = end - start <= 2 * 24 * 60 * 60 * 1000;
+  const playbackSource = useDetailedPlayback ? detailedPlayback : timeline.playback;
+  const playback = playbackSource.filter((point) => point.time >= start && point.time <= end);
   const heatSamples = timeline.heatSamples.filter(
     (sample) => sample.end >= start && sample.start <= end,
   );
@@ -84,6 +89,7 @@ export function filterTimelineByDateRange(
     heatPoints: { type: 'FeatureCollection', features: heatPoints },
     heatSamples,
     playback,
+    detailedPlayback,
     stats: {
       activeDays,
       distanceMeters: routeDistance || playbackDistance,

@@ -146,6 +146,7 @@ export function createDemoTimeline(): NormalizedTimeline {
     heatPoints: { type: 'FeatureCollection', features: heatPoints },
     heatSamples,
     playback,
+    detailedPlayback: playback,
     stats: {
       activeDays: 4,
       distanceMeters: 2580000,

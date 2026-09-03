@@ -21,7 +21,13 @@ import {
   RECORDED_POINT_MIN_ZOOM,
   ROUTE_COLORS,
 } from '../map/config';
-import { boundsForTimeline, recordedPointData, sequentialRouteData, sourceData } from '../map/data';
+import {
+  boundsForTimeline,
+  isShortRangeTimeline,
+  recordedPointData,
+  sequentialRouteData,
+  sourceData,
+} from '../map/data';
 import {
   finiteNumber,
   formatDetailDistance,
@@ -164,6 +170,7 @@ export default function GlobeMap({
 
         const loadZoomDetail = () => {
           const currentTimeline = timelineRef.current;
+          const isShortRange = isShortRangeTimeline(currentTimeline);
           if (map.getZoom() >= DETAIL_ROUTE_MIN_ZOOM && !detailedRoutesLoadedRef.current) {
             const detailRouteSource = map.getSource('timeline-routes-detail') as
               GeoJSONSource | undefined;
@@ -172,7 +179,10 @@ export default function GlobeMap({
             );
             detailedRoutesLoadedRef.current = true;
           }
-          if (map.getZoom() >= RECORDED_POINT_MIN_ZOOM && !recordedPointsLoadedRef.current) {
+          if (
+            (isShortRange || map.getZoom() >= RECORDED_POINT_MIN_ZOOM) &&
+            !recordedPointsLoadedRef.current
+          ) {
             const recordedPointSource = map.getSource('timeline-recorded-points') as
               GeoJSONSource | undefined;
             recordedPointSource?.setData(recordedPointData(currentTimeline));
@@ -219,7 +229,10 @@ export default function GlobeMap({
           }
 
           const properties = feature.properties ?? {};
-          const kind = feature.layer?.id === 'timeline-visits' ? 'visit' : 'route';
+          const kind =
+            feature.layer?.id === 'timeline-visits' || feature.layer?.id === 'timeline-visits-short'
+              ? 'visit'
+              : 'route';
           const coordinate = event.lngLat.toArray() as [number, number];
           const start = finiteNumber(properties.start) ?? Number.NaN;
           const end = finiteNumber(properties.end) ?? start;
@@ -302,7 +315,9 @@ export default function GlobeMap({
     const replayPointSource = map.getSource('timeline-playback-point') as GeoJSONSource | undefined;
     const connectedRouteSource = map.getSource('timeline-connected-route') as
       GeoJSONSource | undefined;
-    routeSource?.setData(timeline.routes as unknown as GeoJSON.GeoJSON);
+    const isShortRange = isShortRangeTimeline(timeline);
+    const routeDisplayData = isShortRange ? timeline.detailedRoutes : timeline.routes;
+    routeSource?.setData(routeDisplayData as unknown as GeoJSON.GeoJSON);
     visitSource?.setData(timeline.visits as unknown as GeoJSON.GeoJSON);
     if (map.getZoom() >= DETAIL_ROUTE_MIN_ZOOM) {
       detailRouteSource?.setData(timeline.detailedRoutes as unknown as GeoJSON.GeoJSON);
@@ -310,7 +325,7 @@ export default function GlobeMap({
     }
     const recordedPointSource = map.getSource('timeline-recorded-points') as
       GeoJSONSource | undefined;
-    if (map.getZoom() >= RECORDED_POINT_MIN_ZOOM) {
+    if (isShortRange || map.getZoom() >= RECORDED_POINT_MIN_ZOOM) {
       recordedPointSource?.setData(recordedPointData(timeline));
       recordedPointsLoadedRef.current = true;
     }
@@ -330,6 +345,7 @@ export default function GlobeMap({
     map.setFilter('timeline-route-detail-glow', modeFilter);
     map.setFilter('timeline-route-detail-hit', modeFilter);
     map.setFilter('timeline-recorded-points', modeFilter);
+    map.setFilter('timeline-recorded-points-short', modeFilter);
     map.setFilter('timeline-heat-movement', modeFilter);
     map.setFilter('timeline-heat-dwell', modeFilter);
 
@@ -353,9 +369,23 @@ export default function GlobeMap({
     map.setLayoutProperty(
       'timeline-recorded-points',
       'visibility',
-      routeVisible ? 'visible' : 'none',
+      routeVisible && !isShortRange ? 'visible' : 'none',
     );
-    map.setLayoutProperty('timeline-visits', 'visibility', routeVisible ? 'visible' : 'none');
+    map.setLayoutProperty(
+      'timeline-recorded-points-short',
+      'visibility',
+      routeVisible && isShortRange ? 'visible' : 'none',
+    );
+    map.setLayoutProperty(
+      'timeline-visits',
+      'visibility',
+      routeVisible && !isShortRange ? 'visible' : 'none',
+    );
+    map.setLayoutProperty(
+      'timeline-visits-short',
+      'visibility',
+      routeVisible && isShortRange ? 'visible' : 'none',
+    );
     for (const layerId of CONNECTED_ROUTE_LAYER_IDS) {
       map.setLayoutProperty(
         layerId,

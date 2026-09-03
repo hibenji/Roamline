@@ -162,6 +162,19 @@ export function addTimelineSourcesAndLayers(map: MapLibreMap) {
       'circle-stroke-opacity': 0.78,
     },
   });
+  map.addLayer({
+    id: 'timeline-recorded-points-short',
+    type: 'circle',
+    source: 'timeline-recorded-points',
+    paint: {
+      'circle-color': modeExpression,
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 1, 1.5, 8, 2, 15, 3.5, 18, 5],
+      'circle-opacity': 0.72,
+      'circle-stroke-color': '#101522',
+      'circle-stroke-width': 0.8,
+      'circle-stroke-opacity': 0.78,
+    },
+  });
   map.addSource('timeline-visits', { type: 'geojson', data: emptyCollection });
   map.addLayer({
     id: 'timeline-visits',
@@ -181,6 +194,19 @@ export function addTimelineSourcesAndLayers(map: MapLibreMap) {
         18,
         8,
       ],
+      'circle-opacity': 0.92,
+      'circle-stroke-color': '#ff806d',
+      'circle-stroke-width': 2,
+      'circle-stroke-opacity': 0.95,
+    },
+  });
+  map.addLayer({
+    id: 'timeline-visits-short',
+    type: 'circle',
+    source: 'timeline-visits',
+    paint: {
+      'circle-color': '#fff3c4',
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 1, 3, 8, 4.5, 12, 6, 18, 8],
       'circle-opacity': 0.92,
       'circle-stroke-color': '#ff806d',
       'circle-stroke-width': 2,

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { countryForPoint } from './country';
 import { distanceBetweenCoordinates, lineDistance } from './lib/geo';
 import { formatCount, formatDistance, formatDuration } from './lib/format';
+import { sourceData } from './map/data';
 import { deriveTimelineStats } from './stats';
 import { createDemoTimeline, filterTimelineByDateRange, normalizeTimeline } from './timeline';
 
@@ -96,17 +97,24 @@ describe('timeline normalizer', () => {
       semanticSegments: [
         {
           startTime: new Date(start).toISOString(),
-          endTime: new Date(start + (pointCount - 1) * 60_000).toISOString(),
+          endTime: new Date(start + (pointCount - 1) * 2_000).toISOString(),
           timelinePath: Array.from({ length: pointCount }, (_, index) => ({
             point: { latitude: 48 + index * 0.000001, longitude: 16 },
-            time: new Date(start + index * 60_000).toISOString(),
+            time: new Date(start + index * 2_000).toISOString(),
           })),
         },
       ],
     });
 
     expect(timeline.detailedRoutes.features[0].geometry.coordinates).toHaveLength(pointCount);
+    expect(timeline.detailedPlayback).toHaveLength(pointCount);
     expect(timeline.routes.features[0].geometry.coordinates.length).toBeLessThan(pointCount);
+    expect(timeline.coverage.end - timeline.coverage.start).toBeLessThanOrEqual(
+      2 * 24 * 60 * 60 * 1000,
+    );
+    expect(sourceData(timeline, 1, ['other']).route.features[0].geometry.coordinates).toHaveLength(
+      pointCount,
+    );
   });
 
   it('creates a self-contained synthetic demo without private fixture data', () => {

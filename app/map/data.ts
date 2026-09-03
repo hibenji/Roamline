@@ -3,6 +3,12 @@ import type { ModeKey } from '../lib/modes';
 import type { NormalizedTimeline, Point } from '../timeline';
 import { emptyCollection } from './config';
 
+const SHORT_RANGE_MAX_DURATION_MS = 2 * 24 * 60 * 60 * 1000;
+
+export function isShortRangeTimeline(timeline: NormalizedTimeline) {
+  return timeline.coverage.end - timeline.coverage.start <= SHORT_RANGE_MAX_DURATION_MS;
+}
+
 export function recordedPointData(timeline: NormalizedTimeline) {
   return {
     type: 'FeatureCollection' as const,
@@ -21,15 +27,13 @@ export function sourceData(
   playbackProgress: number,
   selectedModes: ModeKey[],
 ) {
+  const playback = isShortRangeTimeline(timeline) ? timeline.detailedPlayback : timeline.playback;
   const playbackIndex = Math.max(
     0,
-    Math.min(
-      timeline.playback.length - 1,
-      Math.floor(playbackProgress * Math.max(0, timeline.playback.length - 1)),
-    ),
+    Math.min(playback.length - 1, Math.floor(playbackProgress * Math.max(0, playback.length - 1))),
   );
   const selected = new Set(selectedModes);
-  const activePoints = timeline.playback.slice(0, playbackIndex + 1);
+  const activePoints = playback.slice(0, playbackIndex + 1);
   const routeFeatures: Array<{
     type: 'Feature';
     geometry: { type: 'LineString'; coordinates: [number, number][] };
@@ -173,11 +177,9 @@ export function boundsForTimeline(timeline: NormalizedTimeline) {
 }
 
 export function pointAtProgress(timeline: NormalizedTimeline, progress: number): Point | undefined {
-  if (timeline.playback.length === 0) return undefined;
-  return timeline.playback[
-    Math.max(
-      0,
-      Math.min(timeline.playback.length - 1, Math.floor(progress * (timeline.playback.length - 1))),
-    )
+  const playback = isShortRangeTimeline(timeline) ? timeline.detailedPlayback : timeline.playback;
+  if (playback.length === 0) return undefined;
+  return playback[
+    Math.max(0, Math.min(playback.length - 1, Math.floor(progress * (playback.length - 1))))
   ];
 }

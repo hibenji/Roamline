@@ -399,15 +399,12 @@ export function normalizeTimeline(payload: unknown): NormalizedTimeline {
 
   const allPathPoints = paths.flatMap((path) => path.points).sort((a, b) => a.time - b.time);
   const playbackPoints = allPathPoints.length > 0 ? allPathPoints : rawPositions;
+  const detailedPlayback = dedupePoints(playbackPoints);
   const playbackAnchors =
     allPathPoints.length > 0
       ? paths.flatMap((path) => [path.points[0], path.points[path.points.length - 1]])
       : [];
-  const playback = decimateWithAnchors(
-    dedupePoints(playbackPoints),
-    MAX_PLAYBACK_POINTS,
-    playbackAnchors,
-  );
+  const playback = decimateWithAnchors(detailedPlayback, MAX_PLAYBACK_POINTS, playbackAnchors);
   if (playback.length === 0 && visits.length === 0) {
     throw new Error('No recognizable locations were found in this file.');
   }
@@ -529,6 +526,7 @@ export function normalizeTimeline(payload: unknown): NormalizedTimeline {
     heatPoints: { type: 'FeatureCollection', features: heatPoints },
     heatSamples,
     playback,
+    detailedPlayback,
     stats: {
       activeDays,
       distanceMeters: activityDistance || fallbackDistance,

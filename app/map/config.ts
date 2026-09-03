@@ -27,6 +27,7 @@ export const MAP_INTERACTIVE_LAYER_IDS = [
   'timeline-route-detail-hit',
   'timeline-route-detail',
   'timeline-visits',
+  'timeline-visits-short',
   ...CONNECTED_ROUTE_LAYER_IDS,
 ];
 

@@ -63,6 +63,7 @@ export type NormalizedTimeline = {
   heatPoints: TimelineCollection<PointFeature<HeatProperties>>;
   heatSamples: HeatSample[];
   playback: Point[];
+  detailedPlayback: Point[];
   stats: {
     activeDays: number;
     distanceMeters: number;
