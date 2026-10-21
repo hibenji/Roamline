@@ -38,6 +38,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          pull: true
           load: true
           push: false
           tags: ghcr.io/hibenji/roamline:latest
